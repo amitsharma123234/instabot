@@ -45,7 +45,7 @@ def initial_checker():
 
 def read_input(f, msg, n=None):
     if n is not None:
-        msg += " (enter to use default number: {})".format(n)
+        msg += f" (enter to use default number: {n})"
     print(msg)
     entered = sys.stdin.readline().strip() or str(n)
     if isinstance(n, int):
@@ -160,7 +160,7 @@ def username_adder():
         print("Don't worry. It will be stored locally.")
         while True:
             print("Enter your login: ")
-            f.write(str(sys.stdin.readline().strip()) + ":")
+            f.write(f"{str(sys.stdin.readline().strip())}:")
             print(
                 "Enter your password: (it will not be shown due to security "
                 "reasons - just start typing and press Enter)"
@@ -282,7 +282,7 @@ def menu_follow():
             else:
                 hashtags = bot.read_list_from_file(hashtag_file)
             for hashtag in hashtags:
-                print("Begin following: " + hashtag)
+                print(f"Begin following: {hashtag}")
                 users = bot.get_hashtag_users(hashtag)
                 bot.follow_users(users)
             menu_follow()
@@ -568,7 +568,7 @@ def menu_setting():
         if ans == "1":
             parameter_setting()
             change = input("Want to change it? y/n\n").strip()
-            if change == "y" or change == "Y":
+            if change in ["y", "Y"]:
                 setting_input()
             else:
                 menu_setting()
@@ -629,10 +629,7 @@ if os.stat(setting_file).st_size == 0:
 
 f = open(setting_file)
 lines = f.readlines()
-settings = []
-for i in range(0, 19):
-    settings.append(lines[i].strip())
-
+settings = [lines[i].strip() for i in range(19)]
 bot = Bot(
     max_likes_per_day=int(settings[0]),
     max_unlikes_per_day=int(settings[1]),

@@ -6,7 +6,7 @@
 def filter_medias(self, media_items, filtration=True, quiet=False, is_comment=False):
     if filtration:
         if not quiet:
-            self.logger.info("Received {} medias.".format(len(media_items)))
+            self.logger.info(f"Received {len(media_items)} medias.")
         if not is_comment:
             media_items = _filter_medias_not_liked(media_items)
             if self.max_likes_to_like:
@@ -22,11 +22,11 @@ def filter_medias(self, media_items, filtration=True, quiet=False, is_comment=Fa
 
 
 def _filter_medias_not_liked(media_items):
-    not_liked_medias = []
-    for media in media_items:
-        if "has_liked" in media and not media["has_liked"]:
-            not_liked_medias.append(media)
-    return not_liked_medias
+    return [
+        media
+        for media in media_items
+        if "has_liked" in media and not media["has_liked"]
+    ]
 
 
 def _filter_medias_not_commented(self, media_items):
@@ -45,15 +45,15 @@ def _filter_medias_not_commented(self, media_items):
 
 
 def _filter_medias_nlikes(media_items, max_likes_to_like, min_likes_to_like):
-    filtered_medias = []
-    for media in media_items:
-        if "like_count" in media:
-            if (
-                media["like_count"] < max_likes_to_like
-                and media["like_count"] > min_likes_to_like
-            ):
-                filtered_medias.append(media)
-    return filtered_medias
+    return [
+        media
+        for media in media_items
+        if "like_count" in media
+        and (
+            media["like_count"] < max_likes_to_like
+            and media["like_count"] > min_likes_to_like
+        )
+    ]
 
 
 def _get_media_ids(media_items):
@@ -98,11 +98,7 @@ def search_stop_words_in_user(self, user_info):
     if "full_name" in user_info:
         text += user_info["full_name"].lower()
 
-    for stop_word in self.stop_words:
-        if stop_word in text:
-            return True
-
-    return False
+    return any(stop_word in text for stop_word in self.stop_words)
 
 
 def search_blacklist_hashtags_in_media(self, media_id):
@@ -112,7 +108,7 @@ def search_blacklist_hashtags_in_media(self, media_id):
     media_comments = self.get_media_comments(media_id)
     comments_number = min(6, len(media_comments))
 
-    for i in range(0, comments_number):
+    for i in range(comments_number):
         text += "".join(media_comments[i]["text"])
 
     return any((h in text) for h in self.blacklist_hashtags)
@@ -164,35 +160,46 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
     skipped = self.skipped_file
     followed = self.followed_file
 
-    if not unfollowing:
-        if self.filter_previously_followed and user_id in followed.list:
-            self.console_print(("info: account previously followed, skipping!"), "red")
-            return False
+    if (
+        not unfollowing
+        and self.filter_previously_followed
+        and user_id in followed.list
+    ):
+        self.console_print(("info: account previously followed, skipping!"), "red")
+        return False
     if (
         "has_anonymous_profile_picture" in user_info
         and self.filter_users_without_profile_photo
+    ) and user_info["has_anonymous_profile_picture"]:
+        self.console_print(
+            ("info: account DOES NOT HAVE " "A PROFILE PHOTO, skipping! "), "red"
+        )
+        skipped.append(user_id)
+        return False
+    if (
+        "is_private" in user_info
+        and self.filter_private_users
+        and user_info["is_private"]
     ):
-        if user_info["has_anonymous_profile_picture"]:
-            self.console_print(
-                ("info: account DOES NOT HAVE " "A PROFILE PHOTO, skipping! "), "red"
-            )
-            skipped.append(user_id)
-            return False
-    if "is_private" in user_info and self.filter_private_users:
-        if user_info["is_private"]:
-            self.console_print("info: account is PRIVATE, skipping! ", "red")
-            skipped.append(user_id)
-            return False
-    if "is_business" in user_info and self.filter_business_accounts:
-        if user_info["is_business"]:
-            self.console_print("info: is BUSINESS, skipping!", "red")
-            skipped.append(user_id)
-            return False
-    if "is_verified" in user_info and self.filter_verified_accounts:
-        if user_info["is_verified"]:
-            self.console_print("info: is VERIFIED, skipping !", "red")
-            skipped.append(user_id)
-            return False
+        self.console_print("info: account is PRIVATE, skipping! ", "red")
+        skipped.append(user_id)
+        return False
+    if (
+        "is_business" in user_info
+        and self.filter_business_accounts
+        and user_info["is_business"]
+    ):
+        self.console_print("info: is BUSINESS, skipping!", "red")
+        skipped.append(user_id)
+        return False
+    if (
+        "is_verified" in user_info
+        and self.filter_verified_accounts
+        and user_info["is_verified"]
+    ):
+        self.console_print("info: is VERIFIED, skipping !", "red")
+        skipped.append(user_id)
+        return False
 
     if follower_count < self.min_followers_to_follow:
         msg = "follower_count < bot.min_followers_to_follow, skipping!"

@@ -15,7 +15,7 @@ import huepy
 def check_if_file_exists(file_path, quiet=False):
     if not os.path.exists(file_path):
         if not quiet:
-            print("Can't find '%s' file." % file_path)
+            print(f"Can't find '{file_path}' file.")
         return False
     return True
 
@@ -35,7 +35,7 @@ def read_list_from_file(file_path, quiet=False):
             content = [item.strip() for item in content]
             return [i for i in content if i]
     except Exception as exception:
-        print(str(exception))
+        print(exception)
         return []
 
 
@@ -99,6 +99,4 @@ def extract_urls(text):
         r"\uFDF0-\uFFEF\;\/\?\:\@\&\=\#\~\-\.\+\!\*\'\(\)\,\_])|"
         r"(?:%[a-fA-F0-9]{2}))*)?)(?:\b|$)"
     )  # noqa
-    urls = re.findall(url_regex, text)
-
-    return urls
+    return re.findall(url_regex, text)

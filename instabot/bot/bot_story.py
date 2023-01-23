@@ -3,9 +3,7 @@ def download_stories(self, username):
     list_image, list_video = self.get_user_stories(user_id)
     if list_image == [] and list_video == []:
         self.logger.error(
-            (
-                "Make sure that '{}' is NOT private and that " "posted some stories"
-            ).format(username)
+            f"Make sure that '{username}' is NOT private and that posted some stories"
         )
         return False
     self.logger.info("Downloading stories...")
@@ -20,9 +18,9 @@ def download_stories(self, username):
 def upload_story_photo(self, photo, upload_id=None):
     self.small_delay()
     if self.api.upload_story_photo(photo, upload_id):
-        self.logger.info("Photo '{}' is uploaded as Story.".format(photo))
+        self.logger.info(f"Photo '{photo}' is uploaded as Story.")
         return True
-    self.logger.info("Photo '{}' is not uploaded.".format(photo))
+    self.logger.info(f"Photo '{photo}' is not uploaded.")
     return False
 
 
@@ -51,7 +49,7 @@ def watch_users_reels(self, user_ids, max_users=100):
 
     # Filter reels that were not seen before
     unseen_reels = []
-    for _, reels_data in reels.items():
+    for reels_data in reels.values():
         last_reel_seen_at = reels_data["seen"] if "seen" in reels_data else 0
         unseen_reels.extend(
             [r for r in reels_data["items"] if r["taken_at"] > last_reel_seen_at]

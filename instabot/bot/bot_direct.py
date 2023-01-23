@@ -225,12 +225,11 @@ def _get_user_ids(self, user_ids):
 
 
 def approve_pending_thread_requests(self):
-    pending = self.get_pending_thread_requests()
-    if pending:
+    if pending := self.get_pending_thread_requests():
         for thread in pending:
             thread_id = thread["thread_id"]
             self.api.approve_pending_thread(thread_id)
             if self.api.last_response.status_code == 200:
-                self.logger.info("Approved thread: {}".format(thread_id))
+                self.logger.info(f"Approved thread: {thread_id}")
             else:
-                self.logger.error("Could not approve thread {}".format(thread_id))
+                self.logger.error(f"Could not approve thread {thread_id}")

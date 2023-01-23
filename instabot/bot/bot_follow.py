@@ -5,10 +5,10 @@ from tqdm import tqdm
 def follow(self, user_id, check_user):
     user_id = self.convert_to_user_id(user_id)
     if self.log_follow_unfollow:
-        msg = "Going to follow `user_id` {}.".format(user_id)
+        msg = f"Going to follow `user_id` {user_id}."
         self.logger.info(msg)
     else:
-        msg = " ===> Going to follow `user_id`: {}.".format(user_id)
+        msg = f" ===> Going to follow `user_id`: {user_id}."
         self.console_print(msg)
     if check_user and not self.check_user(user_id):
         return False
@@ -24,14 +24,7 @@ def follow(self, user_id, check_user):
         _r = self.api.follow(user_id)
         if _r == "feedback_required":
             self.logger.error("`Follow` action has been BLOCKED...!!!")
-            if not self.blocked_actions_sleep:
-                if self.blocked_actions_protection:
-                    self.logger.warning(
-                        "Activating blocked actions \
-                        protection for `Follow` action."
-                    )
-                    self.blocked_actions["follows"] = True
-            else:
+            if self.blocked_actions_sleep:
                 if self.sleeping_actions["follows"] and self.blocked_actions_protection:
                     self.logger.warning(
                         "This is the second blocked \
@@ -51,13 +44,19 @@ def follow(self, user_id, check_user):
                     )
                     self.sleeping_actions["follows"] = True
                     time.sleep(self.blocked_actions_sleep_delay)
+            elif self.blocked_actions_protection:
+                self.logger.warning(
+                    "Activating blocked actions \
+                        protection for `Follow` action."
+                )
+                self.blocked_actions["follows"] = True
             return False
         if _r:
             if self.log_follow_unfollow:
-                msg = "Followed `user_id` {}.".format(user_id)
+                msg = f"Followed `user_id` {user_id}."
                 self.logger.info(msg)
             else:
-                msg = "===> FOLLOWED <==== `user_id`: {}.".format(user_id)
+                msg = f"===> FOLLOWED <==== `user_id`: {user_id}."
                 self.console_print(msg, "green")
             self.total["follows"] += 1
             self.followed_file.append(user_id)
@@ -77,7 +76,7 @@ def follow_users(self, user_ids, nfollows=None):
     if self.reached_limit("follows"):
         self.logger.info("Out of follows for today.")
         return
-    msg = "Going to follow {} users.".format(len(user_ids))
+    msg = f"Going to follow {len(user_ids)} users."
     self.logger.info(msg)
     skipped = self.skipped_file
     followed = self.followed_file
@@ -87,9 +86,7 @@ def follow_users(self, user_ids, nfollows=None):
     # Remove skipped and already followed and unfollowed list from user_ids
     user_ids = list(set(user_ids) - skipped.set - followed.set - unfollowed.set)
     user_ids = user_ids[:nfollows] if nfollows else user_ids
-    msg = (
-        "After filtering followed, unfollowed and " "`{}`, {} user_ids left to follow."
-    ).format(skipped.fname, len(user_ids))
+    msg = f"After filtering followed, unfollowed and `{skipped.fname}`, {len(user_ids)} user_ids left to follow."
     self.console_print(msg, "green")
     for user_id in tqdm(user_ids, desc="Processed users"):
         if self.reached_limit("follows"):
@@ -120,13 +117,13 @@ def follow_users(self, user_ids, nfollows=None):
                     break
 
     self.logger.info(
-        "DONE: Now following {} users in total.".format(self.total["follows"])
+        f'DONE: Now following {self.total["follows"]} users in total.'
     )
     return broken_items
 
 
 def follow_followers(self, user_id, nfollows=None):
-    self.logger.info("Follow followers of: {}".format(user_id))
+    self.logger.info(f"Follow followers of: {user_id}")
     if self.reached_limit("follows"):
         self.logger.info("Out of follows for today.")
         return
@@ -134,49 +131,45 @@ def follow_followers(self, user_id, nfollows=None):
         self.logger.info("User not found.")
         return
     followers = self.get_user_followers(user_id, nfollows)
-    followers = list(set(followers) - set(self.blacklist))
-    if not followers:
-        self.logger.info("{} not found / closed / has no followers.".format(user_id))
-    else:
+    if followers := list(set(followers) - set(self.blacklist)):
         self.follow_users(followers[:nfollows])
+    else:
+        self.logger.info(f"{user_id} not found / closed / has no followers.")
 
 
 def follow_following(self, user_id, nfollows=None):
-    self.logger.info("Follow following of: {}".format(user_id))
+    self.logger.info(f"Follow following of: {user_id}")
     if self.reached_limit("follows"):
         self.logger.info("Out of follows for today.")
         return
     if not user_id:
         self.logger.info("User not found.")
         return
-    followings = self.get_user_following(user_id)
-    if not followings:
-        self.logger.info("{} not found / closed / has no following.".format(user_id))
-    else:
+    if followings := self.get_user_following(user_id):
         self.follow_users(followings[:nfollows])
+    else:
+        self.logger.info(f"{user_id} not found / closed / has no following.")
 
 
 def approve_pending_follow_requests(self):
-    pending = self.get_pending_follow_requests()
-    if pending:
+    if pending := self.get_pending_follow_requests():
         for u in tqdm(pending, desc="Approving users"):
             user_id = u["pk"]
-            username = u["username"]
             self.api.approve_pending_friendship(user_id)
             if self.api.last_response.status_code != 200:
-                self.logger.error("Could not approve {}".format(username))
-        self.logger.info("DONE: {} people approved.".format(len(pending)))
+                username = u["username"]
+                self.logger.error(f"Could not approve {username}")
+        self.logger.info(f"DONE: {len(pending)} people approved.")
         return True
 
 
 def reject_pending_follow_requests(self):
-    pending = self.get_pending_follow_requests()
-    if pending:
+    if pending := self.get_pending_follow_requests():
         for u in tqdm(pending, desc="Rejecting users"):
             user_id = u["pk"]
-            username = u["username"]
             self.api.reject_pending_friendship(user_id)
             if self.api.last_response.status_code != 200:
-                self.logger.error("Could not approve {}".format(username))
-        self.logger.info("DONE: {} people rejected.".format(len(pending)))
+                username = u["username"]
+                self.logger.error(f"Could not approve {username}")
+        self.logger.info(f"DONE: {len(pending)} people rejected.")
         return True

@@ -74,7 +74,7 @@ def main():
             )
 
         for follower in new_followers:
-            print("New follower: {}".format(follower["username"]))
+            print(f'New follower: {follower["username"]}')
             bot.send_message(args.message, str(follower["user_id"]))
 
         start_time = datetime.datetime.utcnow()

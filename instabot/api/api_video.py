@@ -19,13 +19,13 @@ def download_video(self, media_id, filename=None, media=False, folder="videos"):
         try:
             media = self.last_json["items"][0]
         except IndexError:
-            raise Exception("Media (media_id=%s) not found for download" % media_id)
+            raise Exception(f"Media (media_id={media_id}) not found for download")
     filename = (
-        "{username}_{media_id}.mp4".format(
+        "{fname}.mp4".format(fname=filename)
+        if filename
+        else "{username}_{media_id}.mp4".format(
             username=media["user"]["username"], media_id=media_id
         )
-        if not filename
-        else "{fname}.mp4".format(fname=filename)
     )
 
     try:
@@ -33,8 +33,9 @@ def download_video(self, media_id, filename=None, media=False, folder="videos"):
         video_urls.append(clips[0]["url"])
     except KeyError:
         carousels = media.get("carousel_media", [])
-        for carousel in carousels:
-            video_urls.append(carousel["video_versions"][0]["url"])
+        video_urls.extend(
+            carousel["video_versions"][0]["url"] for carousel in carousels
+        )
     except Exception:
         return False
 
@@ -43,7 +44,7 @@ def download_video(self, media_id, filename=None, media=False, folder="videos"):
             folder, "{cnt}_{fname}".format(cnt=counter, fname=filename)
         )
         if os.path.exists(fname):
-            print("File %s is exists, return it" % fname)
+            print(f"File {fname} is exists, return it")
             return os.path.abspath(fname)
         response = self.session.get(video_url, stream=True)
         if response.status_code == 200:
@@ -67,13 +68,13 @@ def get_video_info(filename):
                 r"duration: (\d\d:\d\d:\d\d\.\d\d),", str(x), flags=re.IGNORECASE
             )
             if m is not None:
-                res["duration"] = m.group(1)
+                res["duration"] = m[1]
             # Video: h264 (Constrained Baseline)
             # (avc1 / 0x31637661), yuv420p, 480x268
             m = re.search(r"video:\s.*\s(\d+)x(\d+)\s", str(x), flags=re.IGNORECASE)
             if m is not None:
-                res["width"] = m.group(1)
-                res["height"] = m.group(2)
+                res["width"] = m[1]
+                res["height"] = m[2]
     finally:
         if "width" not in res:
             print(
@@ -158,7 +159,7 @@ def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, opti
         return False
     # CONFIGURE
     configure_timeout = options.get("configure_timeout")
-    for attempt in range(4):
+    for _ in range(4):
         if configure_timeout:
             time.sleep(configure_timeout)
         if self.configure_video(
@@ -242,7 +243,6 @@ def resize_video(fname, thumbnail=None):
         )
         return False
     print("Analizing `{fname}`".format(fname=fname))
-    h_lim = {"w": 90.0, "h": 47.0}
     v_lim = {"w": 4.0, "h": 5.0}
     d_lim = 60
     vid = mp.VideoFileClip(fname)
@@ -254,6 +254,7 @@ def resize_video(fname, thumbnail=None):
     )
     if w > h:
         print("Horizontal video")
+        h_lim = {"w": 90.0, "h": 47.0}
         if ratio > (h_lim["w"] / h_lim["h"]):
             print("Cropping video")
             cut = int(ceil((w - h * h_lim["w"] / h_lim["h"]) / 2))

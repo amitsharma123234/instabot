@@ -104,10 +104,7 @@ class TestBotFilter(TestBot):
         for i in range(results):
             my_test_comment_items.append(TEST_COMMENT_ITEM.copy())
             my_test_comment_items[i]["pk"] = TEST_COMMENT_ITEM["pk"] + i
-            if i % 2:
-                my_test_comment_items[i]["has_liked_comment"] = False
-            else:
-                my_test_comment_items[i]["has_liked_comment"] = True
+            my_test_comment_items[i]["has_liked_comment"] = not i % 2
         media_id = 1234567890
         response_data = {
             "caption": TEST_CAPTION_ITEM,
@@ -160,10 +157,7 @@ class TestBotFilter(TestBot):
         for i in range(results):
             my_test_photo_items.append(TEST_PHOTO_ITEM.copy())
             my_test_photo_items[i]["pk"] = TEST_PHOTO_ITEM["id"] + i
-            if i % 2:
-                my_test_photo_items[i]["has_liked"] = False
-            else:
-                my_test_photo_items[i]["has_liked"] = True
+            my_test_photo_items[i]["has_liked"] = not i % 2
         response_data = {
             "auto_load_more_enabled": True,
             "num_results": results,

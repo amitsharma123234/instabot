@@ -20,7 +20,7 @@ def upload_video(self, video, caption="", thumbnail=None, options={}):
         video, caption=caption, thumbnail=thumbnail, options=options
     )
     if not result:
-        self.logger.info("Video '{}' is not {} .".format(video, "uploaded"))
+        self.logger.info(f"Video '{video}' is not uploaded .")
         return False
     self.logger.info("Video '{video}' uploaded".format(video=video))
     return result
@@ -36,11 +36,11 @@ def download_video(
         media = self.get_media_info(media_id)[0]
         caption = media["caption"]["text"] if media["caption"] else ""
         username = media["user"]["username"]
-        fname = os.path.join(folder, "{}_{}.txt".format(username, media_id))
+        fname = os.path.join(folder, f"{username}_{media_id}.txt")
         with open(fname, encoding="utf8", mode="w") as f:
             f.write(caption)
     try:
         return self.api.download_video(media_id, filename, False, folder)
     except Exception:
-        self.logger.info("Media with `{}` is not downloaded.".format(media_id))
+        self.logger.info(f"Media with `{media_id}` is not downloaded.")
         return False

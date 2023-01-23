@@ -44,36 +44,35 @@ if not args.photo:
     pics = []
     exts = ["jpg", "JPG", "jpeg", "JPEG", "png", "PNG"]
     for ext in exts:
-        pics += [os.path.basename(x) for x in glob.glob("media/*.{}".format(ext))]
+        pics += [os.path.basename(x) for x in glob.glob(f"media/*.{ext}")]
     from random import shuffle
 
     shuffle(pics)
 else:
     pics = [args.photo]
 pics = list(set(pics) - set(posted_pic_list))
-if len(pics) == 0:
+if not pics:
     if not args.photo:
         bot.logger.warn("NO MORE PHOTO TO UPLOAD")
         exit()
     else:
-        bot.logger.error("The photo `{}` has already been posted".format(pics[0]))
+        bot.logger.error(f"The photo `{pics[0]}` has already been posted")
 try:
     for pic in pics:
-        bot.logger.info("Checking {}".format(pic))
+        bot.logger.info(f"Checking {pic}")
         if args.caption:
             caption = args.caption
+        elif captions_for_medias.CAPTIONS.get(pic):
+            caption = captions_for_medias.CAPTIONS[pic]
         else:
-            if captions_for_medias.CAPTIONS.get(pic):
-                caption = captions_for_medias.CAPTIONS[pic]
-            else:
-                try:
-                    caption = raw_input(
-                        "No caption found for this media. " "Type the caption now: "
-                    )
-                except NameError:
-                    caption = input(
-                        "No caption found for this media. " "Type the caption now: "
-                    )
+            try:
+                caption = raw_input(
+                    "No caption found for this media. " "Type the caption now: "
+                )
+            except NameError:
+                caption = input(
+                    "No caption found for this media. " "Type the caption now: "
+                )
         bot.logger.info(
             "Uploading pic `{pic}` with caption: `{caption}`".format(
                 pic=pic, caption=caption
@@ -84,16 +83,16 @@ try:
         users_to_tag = [{'user_id': u, 'x': 0.5, 'y': 0.5} for u in args.tag]
 
         if not bot.upload_photo(
-            os.path.dirname(os.path.realpath(__file__)) + "/media/" + pic,
+            f"{os.path.dirname(os.path.realpath(__file__))}/media/{pic}",
             caption=caption,
-            user_tags=users_to_tag
+            user_tags=users_to_tag,
         ):
             bot.logger.error("Something went wrong...")
             break
         posted_pic_list.append(pic)
         with open(posted_pic_file, "a") as f:
             f.write(pic + "\n")
-        bot.logger.info("Succesfully uploaded: " + pic)
+        bot.logger.info(f"Succesfully uploaded: {pic}")
         break
 except Exception as e:
     bot.logger.error("\033[41mERROR...\033[0m")

@@ -5,6 +5,7 @@
         If media is commented, reply to comments
         if you didn't reply yet to that user.
 """
+
 from __future__ import unicode_literals
 
 import argparse
@@ -35,7 +36,7 @@ if not args.link:
     exit()
 
 if not os.path.exists(args.comments_file):
-    print("Can't find '{}' file.".format(args.comments_file))
+    print(f"Can't find '{args.comments_file}' file.")
     exit()
 
 bot = Bot(comments_file=args.comments_file)
@@ -59,7 +60,7 @@ for comment in tqdm(comments):
     try:
         bot.logger.info("Comment text: `{text}`".format(text=text))
     except Exception as e:
-        bot.logger.error("{}".format(e))
+        bot.logger.error(f"{e}")
     # to save time, because you can't reply to yourself
     if str(user_id) == bot.user_id:
         bot.logger.error("You can't reply to yourself")

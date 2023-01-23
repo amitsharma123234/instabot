@@ -13,9 +13,7 @@ def unlike(self, media_id):
 
 
 def unlike_comment(self, comment_id):
-    if self.api.unlike_comment(comment_id):
-        return True
-    return False
+    return bool(self.api.unlike_comment(comment_id))
 
 
 def unlike_media_comments(self, media_id):
@@ -57,7 +55,7 @@ def unlike_medias(self, medias):
 
 
 def unlike_user(self, user_id):
-    self.logger.info("Going to unlike user %s's feed:" % user_id)
+    self.logger.info(f"Going to unlike user {user_id}'s feed:")
     user_id = self.convert_to_user_id(user_id)
     medias = self.get_user_medias(user_id, filtration=False)
     return self.unlike_medias(medias)

@@ -7,21 +7,17 @@ def unfollow(self, user_id):
     user_info = self.get_user_info(user_id)
 
     if not user_info:
-        self.logger.info("Can't get user_id=%s info" % str(user_id))
+        self.logger.info(f"Can't get user_id={str(user_id)} info")
         return False  # No user_info
 
     username = user_info.get("username")
 
     if self.log_follow_unfollow:
-        msg = "Going to unfollow `user_id` {} with username {}.".format(
-            user_id, username
-        )
+        msg = f"Going to unfollow `user_id` {user_id} with username {username}."
         self.logger.info(msg)
     else:
         self.console_print(
-            "===> Going to unfollow `user_id`: {} with username: {}".format(
-                user_id, username
-            )
+            f"===> Going to unfollow `user_id`: {user_id} with username: {username}"
         )
 
     if self.check_user(user_id, unfollowing=True):
@@ -38,14 +34,7 @@ def unfollow(self, user_id):
         _r = self.api.unfollow(user_id)
         if _r == "feedback_required":
             self.logger.error("`Unfollow` action has been BLOCKED...!!!")
-            if not self.blocked_actions_sleep:
-                if self.blocked_actions_protection:
-                    self.logger.warning(
-                        "Activating blocked actions \
-                        protection for `Unfollow` action."
-                    )
-                    self.blocked_actions["unfollows"] = True
-            else:
+            if self.blocked_actions_sleep:
                 if (
                     self.sleeping_actions["unfollows"]
                     and self.blocked_actions_protection
@@ -68,12 +57,16 @@ def unfollow(self, user_id):
                     )
                     self.sleeping_actions["unfollows"] = True
                     time.sleep(self.blocked_actions_sleep_delay)
+            elif self.blocked_actions_protection:
+                self.logger.warning(
+                    "Activating blocked actions \
+                        protection for `Unfollow` action."
+                )
+                self.blocked_actions["unfollows"] = True
             return False
         if _r:
             if self.log_follow_unfollow:
-                msg = "Unfollowed `user_id` {} with username {}".format(
-                    user_id, username
-                )
+                msg = f"Unfollowed `user_id` {user_id} with username {username}"
                 self.logger.info(msg)
             else:
                 msg = "===> Unfollowed, `user_id`: {}, user_name: {}"
@@ -93,14 +86,12 @@ def unfollow(self, user_id):
 
 def unfollow_users(self, user_ids):
     broken_items = []
-    self.logger.info("Going to unfollow {} users.".format(len(user_ids)))
+    self.logger.info(f"Going to unfollow {len(user_ids)} users.")
     user_ids = set(map(str, user_ids))
     filtered_user_ids = list(set(user_ids) - set(self.whitelist))
     if len(filtered_user_ids) != len(user_ids):
         self.logger.info(
-            "After filtration by whitelist {} users left.".format(
-                len(filtered_user_ids)
-            )
+            f"After filtration by whitelist {len(filtered_user_ids)} users left."
         )
     for user_id in tqdm(filtered_user_ids, desc="Processed users"):
         if not self.unfollow(user_id):
@@ -108,7 +99,7 @@ def unfollow_users(self, user_ids):
             i = filtered_user_ids.index(user_id)
             broken_items = filtered_user_ids[i:]
             break
-    self.logger.info("DONE: Total unfollowed {} users.".format(self.total["unfollows"]))
+    self.logger.info(f'DONE: Total unfollowed {self.total["unfollows"]} users.')
     return broken_items
 
 

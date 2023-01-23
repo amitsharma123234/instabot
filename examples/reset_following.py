@@ -53,9 +53,7 @@ class Task(object):
     def one(bot):
         print("Creating List")
         friends = bot.following
-        with open(
-            "friends_{}.txt".format(bot.username), "w"
-        ) as file:  # writing to the file
+        with open(f"friends_{bot.username}.txt", "w") as file:  # writing to the file
             for user_id in friends:
                 file.write(str(user_id) + "\n")
         print("Task Done")
@@ -65,9 +63,7 @@ class Task(object):
 
     @staticmethod
     def two(bot):
-        friends = bot.read_list_from_file(
-            "friends_{}.txt".format(bot.username)
-        )  # getting the list of friends
+        friends = bot.read_list_from_file(f"friends_{bot.username}.txt")
         your_following = bot.following
         unfollow = list(
             set(your_following) - set(friends)

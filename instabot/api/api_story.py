@@ -13,7 +13,7 @@ from .api_photo import get_image_size, stories_shaper
 
 
 def download_story(self, filename, story_url, username):
-    path = "stories/{}".format(username)
+    path = f"stories/{username}"
     if not os.path.exists(path):
         os.makedirs(path)
     fname = os.path.join(path, filename)
@@ -45,7 +45,7 @@ def upload_story_photo(self, photo, upload_id=None):
         "image_compression": '{"lib_name":"jt","lib_version":"1.3.0",'
         + 'quality":"87"}',
         "photo": (
-            "pending_media_%s.jpg" % upload_id,
+            f"pending_media_{upload_id}.jpg",
             photo_bytes,
             "application/octet-stream",
             {"Content-Transfer-Encoding": "binary"},
@@ -60,7 +60,9 @@ def upload_story_photo(self, photo, upload_id=None):
             "User-Agent": self.user_agent,
         }
     )
-    response = self.session.post(config.API_URL + "upload/photo/", data=m.to_string())
+    response = self.session.post(
+        f"{config.API_URL}upload/photo/", data=m.to_string()
+    )
 
     if response.status_code == 200:
         upload_id = json.loads(response.text).get("upload_id")

@@ -652,7 +652,7 @@ class TestBotGet(TestBot):
             u"feedback_url": u"repute/report_problem/instagram_like_add/",
         }
         # both likes blocked
-        for x in range(1, 2):
+        for _ in range(1, 2):
             responses.add(
                 responses.POST,
                 "{api_url}media/{media_id}/like/".format(

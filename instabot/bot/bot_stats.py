@@ -3,9 +3,7 @@ import os
 
 
 def get_tsv_line(dictionary):
-    line = ""
-    for key in sorted(dictionary):
-        line += str(dictionary[key]) + "\t"
+    line = "".join(str(dictionary[key]) + "\t" for key in sorted(dictionary))
     return line[:-1] + "\n"
 
 
@@ -35,15 +33,14 @@ def save_user_stats(self, username, path=""):
     if not username:
         username = self.api.username
     user_id = self.convert_to_user_id(username)
-    infodict = self.get_user_info(user_id, use_cache=False)
-    if infodict:
+    if infodict := self.get_user_info(user_id, use_cache=False):
         data_to_save = {
             "date": str(datetime.datetime.now().replace(microsecond=0)),
             "followers": int(infodict["follower_count"]),
             "following": int(infodict["following_count"]),
             "medias": int(infodict["media_count"]),
         }
-        file_path = os.path.join(path, "%s.tsv" % username)
+        file_path = os.path.join(path, f"{username}.tsv")
         dump_data(data_to_save, file_path)
-        self.logger.info("Stats saved at %s." % data_to_save["date"])
+        self.logger.info(f'Stats saved at {data_to_save["date"]}.')
     return False

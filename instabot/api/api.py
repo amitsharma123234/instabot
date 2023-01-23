@@ -53,7 +53,7 @@ except ImportError:
     JSONDecodeError = ValueError
 
 
-version_info = sys.version_info[0:3]
+version_info = sys.version_info[:3]
 is_py2 = version_info[0] == 2
 is_py3 = version_info[0] == 3
 is_py37 = version_info[:2] == (3, 7)
@@ -64,15 +64,7 @@ current_path = os.path.abspath(os.getcwd())
 
 
 class API(object):
-    def __init__(
-        self,
-        device=None,
-        base_path=current_path + "/config/",
-        save_logfile=True,
-        log_filename=None,
-        loglevel_file=logging.DEBUG,
-        loglevel_stream=logging.INFO,
-    ):
+    def __init__(self, device=None, base_path=f"{current_path}/config/", save_logfile=True, log_filename=None, loglevel_file=logging.DEBUG, loglevel_stream=logging.INFO):
         # Setup device and user_agent
         self.device = device or devices.DEFAULT_DEVICE
 
@@ -88,19 +80,17 @@ class API(object):
         # Setup logging
         # instabot_version = Bot.version()
         # self.logger = logging.getLogger("[instabot_{}]".format(instabot_version))
-        self.logger = logging.getLogger("instabot version: " + version)
+        self.logger = logging.getLogger(f"instabot version: {version}")
 
         if not os.path.exists(base_path):
             os.makedirs(base_path)  # create base_path if not exists
 
-        if not os.path.exists(base_path + "/log/"):
-            os.makedirs(base_path + "/log/")  # create log folder if not exists
+        if not os.path.exists(f"{base_path}/log/"):
+            os.makedirs(f"{base_path}/log/")
 
         if save_logfile is True:
             if log_filename is None:
-                log_filename = os.path.join(
-                    base_path, "log/instabot_{}.log".format(id(self))
-                )
+                log_filename = os.path.join(base_path, f"log/instabot_{id(self)}.log")
 
             fh = logging.FileHandler(filename=log_filename)
             fh.setLevel(loglevel_file)
@@ -110,11 +100,10 @@ class API(object):
                 )
             )
 
-            handler_existed = False
-            for handler in self.logger.handlers:
-                if isinstance(handler, logging.FileHandler):
-                    handler_existed = True
-                    break
+            handler_existed = any(
+                isinstance(handler, logging.FileHandler)
+                for handler in self.logger.handlers
+            )
             if not handler_existed:
                 self.logger.addHandler(fh)
 
@@ -122,11 +111,10 @@ class API(object):
         ch.setLevel(loglevel_stream)
         ch.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 
-        handler_existed = False
-        for handler in self.logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
-                handler_existed = True
-                break
+        handler_existed = any(
+            isinstance(handler, logging.StreamHandler)
+            for handler in self.logger.handlers
+        )
         if not handler_existed:
             self.logger.addHandler(ch)
         self.logger.setLevel(logging.DEBUG)
@@ -280,36 +268,33 @@ class API(object):
             self.cookie_fname = os.path.join(self.base_path, cookie_fname)
 
         cookie_is_loaded = False
-        msg = "Login flow failed, the cookie is broken. Relogin again."
-
-        if use_cookie is True:
-            # try:
-            if (
-                self.load_uuid_and_cookie(load_cookie=use_cookie, load_uuid=use_uuid)
-                is True
-            ):
+        if use_cookie is True and (
+            self.load_uuid_and_cookie(load_cookie=use_cookie, load_uuid=use_uuid)
+            is True
+        ):
                 # Check if the token loaded is valid.
-                if self.login_flow(False) is True:
-                    cookie_is_loaded = True
-                    self.save_successful_login()
-                else:
-                    self.logger.info(msg)
-                    set_device = generate_all_uuids = False
-                    force = True
+            if self.login_flow(False) is True:
+                cookie_is_loaded = True
+                self.save_successful_login()
+            else:
+                msg = "Login flow failed, the cookie is broken. Relogin again."
+
+                self.logger.info(msg)
+                set_device = generate_all_uuids = False
+                force = True
 
         if not cookie_is_loaded and (not self.is_logged_in or force):
             self.session = requests.Session()
-            if use_uuid is True:
-                if (
-                    self.load_uuid_and_cookie(
-                        load_cookie=use_cookie, load_uuid=use_uuid
-                    )
-                    is False
-                ):
-                    if set_device is True:
-                        self.set_device()
-                    if generate_all_uuids is True:
-                        self.generate_all_uuids()
+            if use_uuid is True and (
+                self.load_uuid_and_cookie(
+                    load_cookie=use_cookie, load_uuid=use_uuid
+                )
+                is False
+            ):
+                if set_device:
+                    self.set_device()
+                if generate_all_uuids:
+                    self.generate_all_uuids()
             self.pre_login_flow()
             data = json.dumps(
                 {
@@ -337,20 +322,17 @@ class API(object):
             elif (
                 self.last_json.get("error_type", "") == "checkpoint_challenge_required"
             ):
-                # self.logger.info("Checkpoint challenge required...")
-                if ask_for_code is True:
-                    solved = self.solve_challenge()
-                    if solved:
-                        self.save_successful_login()
-                        self.login_flow(True)
-                        return True
-                    else:
-                        self.logger.error(
-                            "Failed to login, unable to solve the challenge"
-                        )
-                        self.save_failed_login()
-                        return False
+                if ask_for_code is not True:
+                    return False
+                if solved := self.solve_challenge():
+                    self.save_successful_login()
+                    self.login_flow(True)
+                    return True
                 else:
+                    self.logger.error(
+                        "Failed to login, unable to solve the challenge"
+                    )
+                    self.save_failed_login()
                     return False
             elif self.last_json.get("two_factor_required"):
                 if self.two_factor_auth():
@@ -375,7 +357,7 @@ class API(object):
         two_factor_id = self.last_json["two_factor_info"]["two_factor_identifier"]
 
         login = self.session.post(
-            config.API_URL + "accounts/two_factor_login/",
+            f"{config.API_URL}accounts/two_factor_login/",
             data={
                 "username": self.username,
                 "verification_code": two_factor_code,
@@ -391,28 +373,23 @@ class API(object):
             resp_json = json.loads(login.text)
             if resp_json["status"] != "ok":
                 if "message" in resp_json:
-                    self.logger.error("Login error: {}".format(resp_json["message"]))
+                    self.logger.error(f'Login error: {resp_json["message"]}')
                 else:
                     self.logger.error(
-                        ('Login error: "{}" status and' " message {}.").format(
-                            resp_json["status"], login.text
-                        )
+                        f'Login error: "{resp_json["status"]}" status and message {login.text}.'
                     )
                 return False
             return True
         else:
             self.logger.error(
-                (
-                    "Two-factor authentication request returns "
-                    "{} error with message {} !"
-                ).format(login.status_code, login.text)
+                f"Two-factor authentication request returns {login.status_code} error with message {login.text} !"
             )
             return False
 
     def save_successful_login(self):
         self.is_logged_in = True
         self.last_login = time.time()
-        self.logger.info("Logged-in successfully as '{}'!".format(self.username))
+        self.logger.info(f"Logged-in successfully as '{self.username}'!")
 
     def save_failed_login(self):
         self.logger.info("Username or password is incorrect.")
@@ -424,7 +401,7 @@ class API(object):
         try:
             self.send_request(challenge_url, None, login=True, with_signature=False)
         except Exception as e:
-            self.logger.error("solve_challenge; {}".format(e))
+            self.logger.error(f"solve_challenge; {e}")
             return False
 
         choices = self.get_challenge_choices()
@@ -473,16 +450,20 @@ class API(object):
                 choices.append("1 - Email")
 
         if last_json.get("step_name", "") == "delta_login_review":
-            choices.append("Login attempt challenge received")
-            choices.append("0 - It was me")
-            choices.append("0 - It wasn't me")
-
-        if not choices:
-            choices.append(
-                '"{}" challenge received'.format(last_json.get("step_name", "Unknown"))
+            choices.extend(
+                (
+                    "Login attempt challenge received",
+                    "0 - It was me",
+                    "0 - It wasn't me",
+                )
             )
-            choices.append("0 - Default")
-
+        if not choices:
+            choices.extend(
+                (
+                    f'"{last_json.get("step_name", "Unknown")}" challenge received',
+                    "0 - Default",
+                )
+            )
         return choices
 
     def logout(self, *args, **kwargs):
@@ -497,7 +478,7 @@ class API(object):
     def set_proxy(self):
         if getattr(self, "proxy", None):
             parsed = urllib.parse.urlparse(self.proxy)
-            scheme = "http://" if not parsed.scheme else ""
+            scheme = "" if parsed.scheme else "http://"
             self.session.proxies["http"] = scheme + self.proxy
             self.session.proxies["https"] = scheme + self.proxy
 
@@ -544,12 +525,10 @@ class API(object):
         self.last_response = response
         if post is not None:
             self.logger.debug(
-                "POST to endpoint: {} returned response: {}".format(endpoint, response)
+                f"POST to endpoint: {endpoint} returned response: {response}"
             )
         else:
-            self.logger.debug(
-                "GET to endpoint: {} returned response: {}".format(endpoint, response)
-            )
+            self.logger.debug(f"GET to endpoint: {endpoint} returned response: {response}")
 
         if response.status_code == 200:
             try:
@@ -559,14 +538,10 @@ class API(object):
                 return False
         else:
             self.logger.debug(
-                "Responsecode indicates error; response content: {}".format(
-                    response.content
-                )
+                f"Responsecode indicates error; response content: {response.content}"
             )
-            if response.status_code != 404 and response.status_code != "404":
-                self.logger.error(
-                    "Request returns {} error!".format(response.status_code)
-                )
+            if response.status_code not in [404, "404"]:
+                self.logger.error(f"Request returns {response.status_code} error!")
             try:
                 response_data = json.loads(response.text)
                 if response_data.get(
@@ -589,9 +564,9 @@ class API(object):
                     "Error checking for `feedback_required`, "
                     "response text is not JSON"
                 )
-                self.logger.info("Full Response: {}".format(str(response)))
+                self.logger.info(f"Full Response: {str(response)}")
                 try:
-                    self.logger.info("Response Text: {}".format(str(response.text)))
+                    self.logger.info(f"Response Text: {str(response.text)}")
                 except Exception:
                     pass
             if response.status_code == 429:
@@ -608,8 +583,7 @@ class API(object):
                     sys.exit()
                 timeout_minutes += 5
                 self.logger.warning(
-                    "That means 'too many requests'. I'll go to sleep "
-                    "for {} minutes.".format(timeout_minutes)
+                    f"That means 'too many requests'. I'll go to sleep for {timeout_minutes} minutes."
                 )
                 time.sleep(timeout_minutes * 60)
                 return self.send_request(
@@ -636,14 +610,12 @@ class API(object):
                         self.last_json = json.loads(response.text)
                     except Exception:
                         self.logger.error("Error unknown send request 400 2FA")
-                        pass
                     return self.two_factor_auth()
-                # End of Interactive Two-Factor Authentication
                 else:
                     msg = "Instagram's error message: {}"
                     self.logger.info(msg.format(response_data.get("message")))
                     if "error_type" in response_data:
-                        msg = "Error type: {}".format(response_data["error_type"])
+                        msg = f'Error type: {response_data["error_type"]}'
                     self.logger.info(msg)
 
             # For debugging
@@ -652,7 +624,6 @@ class API(object):
                 self.last_json = json.loads(response.text)
             except Exception:
                 self.logger.error("Error unknown send request")
-                pass
             return False
 
     @property
@@ -681,7 +652,7 @@ class API(object):
 
     @property
     def rank_token(self):
-        return "{}_{}".format(self.user_id, self.uuid)
+        return f"{self.user_id}_{self.uuid}"
 
     @property
     def default_data(self):
@@ -744,7 +715,7 @@ class API(object):
         if "is_pull_to_refresh" in options:
             data["reason"] = "pull_to_refresh"
             data["is_pull_to_refresh"] = "1"
-        elif "is_pull_to_refresh" not in options:
+        else:
             data["reason"] = "cold_start_fetch"
             data["is_pull_to_refresh"] = "0"
 
@@ -928,7 +899,7 @@ class API(object):
         return self.send_request(url)
 
     def archive_media(self, media, undo=False):
-        action = "only_me" if not undo else "undo_only_me"
+        action = "undo_only_me" if undo else "only_me"
         data = self.json_data({"media_id": media["id"]})
         url = "media/{media_id}/{action}/?media_type={media_type}".format(
             media_id=media["id"], action=action, media_type=media["media_type"]
@@ -1067,11 +1038,11 @@ class API(object):
         double_tap = random.randint(0, 1)
         json_data = self.json_data(data)
         # TODO: comment out debug log out when done
-        self.logger.debug("post data: {}".format(json_data))
+        self.logger.debug(f"post data: {json_data}")
         return self.send_request(
             endpoint="media/{media_id}/like/".format(media_id=media_id),
             post=json_data,
-            extra_sig=["d={}".format(double_tap)],
+            extra_sig=[f"d={double_tap}"],
         )
 
     def unlike(self, media_id):
@@ -1143,7 +1114,7 @@ class API(object):
 
     def sync_from_adress_book(self, contacts):
         url = "address_book/link/?include=extra_display_name,thumbnails"
-        return self.send_request(url, "contacts=" + json.dumps(contacts))
+        return self.send_request(url, f"contacts={json.dumps(contacts)}")
 
     # ====== FEED METHODS ====== #
     def tag_feed(self, tag):
@@ -1292,17 +1263,10 @@ class API(object):
         # ToDo update endpoints for posts
         if muted_content == "stories":
             url = "friendships/muted_reels"
-        elif muted_content == "posts":
-            raise NotImplementedError(
-                "API does not support getting friends "
-                "with muted {}".format(muted_content)
-            )
         else:
             raise NotImplementedError(
-                "API does not support getting friends"
-                " with muted {}".format(muted_content)
+                f"API does not support getting friends with muted {muted_content}"
             )
-
         return self.send_request(url)
 
     def unmute_user(self, user, unmute_posts=False, unmute_stories=False):
@@ -1329,7 +1293,7 @@ class API(object):
                 "_csrftoken": self.token,
             }
         )
-        url = "friendships/approve/{}/".format(user_id)
+        url = f"friendships/approve/{user_id}/"
         return self.send_request(url, post=data)
 
     def reject_pending_friendship(self, user_id):
@@ -1341,7 +1305,7 @@ class API(object):
                 "_csrftoken": self.token,
             }
         )
-        url = "friendships/ignore/{}/".format(user_id)
+        url = f"friendships/ignore/{user_id}/"
         return self.send_request(url, post=data)
 
     def get_direct_share(self):
@@ -1352,7 +1316,7 @@ class API(object):
         if not isinstance(users, list):
             print("Users must be an list")
             return False
-        result = {"users": "[[{}]]".format(",".join(users))}
+        result = {"users": f'[[{",".join(users)}]]'}
         if thread_id:
             template = '["{}"]' if use_quotes else "[{}]"
             result["thread"] = template.format(thread_id)
@@ -1375,7 +1339,7 @@ class API(object):
         volatile_seed = "12345"
         m = hashlib.md5()
         m.update(seed.encode("utf-8") + volatile_seed.encode("utf-8"))
-        return "android-" + m.hexdigest()[:16]
+        return f"android-{m.hexdigest()[:16]}"
 
     @staticmethod
     def get_seed(*args):
@@ -1386,10 +1350,7 @@ class API(object):
     @staticmethod
     def generate_UUID(uuid_type):
         generated_uuid = str(uuid.uuid4())
-        if uuid_type:
-            return generated_uuid
-        else:
-            return generated_uuid.replace("-", "")
+        return generated_uuid if uuid_type else generated_uuid.replace("-", "")
 
     def get_total_followers_or_followings(  # noqa: C901
         self,
@@ -1417,16 +1378,15 @@ class API(object):
         next_max_id = ""
         self.get_username_info(user_id)
         username_info = self.last_json
-        if "user" in username_info:
-            total = amount or username_info["user"][key]
-
-            if total > 200000:
-                print(
-                    "Consider temporarily saving the result of this big "
-                    "operation. This will take a while.\n"
-                )
-        else:
+        if "user" not in username_info:
             return False
+        total = amount or username_info["user"][key]
+
+        if total > 200000:
+            print(
+                "Consider temporarily saving the result of this big "
+                "operation. This will take a while.\n"
+            )
         if filter_business:
             print(
                 "--> You are going to filter business accounts. "
@@ -1435,13 +1395,13 @@ class API(object):
         if to_file is not None:
             if os.path.isfile(to_file):
                 if not overwrite:
-                    print("File `{}` already exists. Not overwriting.".format(to_file))
+                    print(f"File `{to_file}` already exists. Not overwriting.")
                     return False
                 else:
-                    print("Overwriting file `{}`".format(to_file))
+                    print(f"Overwriting file `{to_file}`")
             with open(to_file, "w"):
                 pass
-        desc = "Getting {} of {}".format(which, user_id)
+        desc = f"Getting {which} of {user_id}"
         with tqdm(total=total, desc=desc, leave=True) as pbar:
             while True:
                 get(user_id, next_max_id)
@@ -1461,9 +1421,9 @@ class API(object):
                                 continue
                             if to_file is not None:
                                 if usernames:
-                                    f.write("{}\n".format(item["username"]))
+                                    f.write(f'{item["username"]}\n')
                                 else:
-                                    f.write("{}\n".format(item["pk"]))
+                                    f.write(f'{item["pk"]}\n')
                             result.append(item)
                             pbar.update(1)
                             sleep_track += 1
@@ -1478,7 +1438,7 @@ class API(object):
                     if not last_json["users"] or len(result) >= total:
                         return result[:total]
                 except Exception as e:
-                    print("ERROR: {}".format(e))
+                    print(f"ERROR: {e}")
                     return result[:total]
 
                 if last_json["big_list"] is False:
@@ -1634,7 +1594,7 @@ class API(object):
         return self.send_request(url)
 
     def get_user_reel(self, user_id):
-        url = "feed/user/{}/reel_media/".format(user_id)
+        url = f"feed/user/{user_id}/reel_media/"
         return self.send_request(url)
 
     def get_reels_tray_feed(
@@ -1689,10 +1649,9 @@ class API(object):
             self.get_user_reel
         """
         url = "feed/reels_media/"
-        res = self.send_request(
+        if res := self.send_request(
             url, post=self.json_data({"user_ids": [str(x) for x in user_ids]})
-        )
-        if res:
+        ):
             return self.last_json["reels"] if "reels" in self.last_json else []
         return []
 
@@ -1732,13 +1691,11 @@ class API(object):
         ).ok
 
     def get_user_stories(self, user_id):
-        url = "feed/user/{}/story/".format(user_id)
+        url = f"feed/user/{user_id}/story/"
         return self.send_request(url)
 
     def get_self_story_viewers(self, story_id):
-        url = ("media/{}/list_reel_media_viewer/?supported_capabilities_new={}").format(
-            story_id, config.SUPPORTED_CAPABILITIES
-        )
+        url = f"media/{story_id}/list_reel_media_viewer/?supported_capabilities_new={config.SUPPORTED_CAPABILITIES}"
         return self.send_request(url)
 
     def get_tv_suggestions(self):
@@ -1746,21 +1703,21 @@ class API(object):
         return self.send_request(url)
 
     def get_hashtag_stories(self, hashtag):
-        url = "tags/{}/story/".format(hashtag)
+        url = f"tags/{hashtag}/story/"
         return self.send_request(url)
 
     def follow_hashtag(self, hashtag):
         data = self.json_data({})
-        url = "tags/follow/{}/".format(hashtag)
+        url = f"tags/follow/{hashtag}/"
         return self.send_request(url, data)
 
     def unfollow_hashtag(self, hashtag):
         data = self.json_data({})
-        url = "tags/unfollow/{}/".format(hashtag)
+        url = f"tags/unfollow/{hashtag}/"
         return self.send_request(url, data)
 
     def get_tags_followed_by_user(self, user_id):
-        url = "users/{}/following_tags_info/".format(user_id)
+        url = f"users/{user_id}/following_tags_info/"
         return self.send_request(url)
 
     def get_hashtag_sections(self, hashtag):
@@ -1770,13 +1727,11 @@ class API(object):
                 "include_persistent": "true",
             }
         )
-        url = "tags/{}/sections/".format(hashtag)
+        url = f"tags/{hashtag}/sections/"
         return self.send_request(url, data)
 
     def get_media_insight(self, media_id):
-        url = ("insights/media_organic_insights/{}/?ig_sig_key_version={}").format(
-            media_id, config.IG_SIG_KEY
-        )
+        url = f"insights/media_organic_insights/{media_id}/?ig_sig_key_version={config.IG_SIG_KEY}"
         return self.send_request(url)
 
     def get_self_insight(self):
@@ -1797,7 +1752,7 @@ class API(object):
 
     def unsave_media(self, media_id):
         data = self.json_data()
-        url = "media/{}/unsave/".format(media_id)
+        url = f"media/{media_id}/unsave/"
         return self.send_request(url, data)
 
     def get_saved_medias(self):
@@ -1828,7 +1783,7 @@ class API(object):
 
     def get_cooldowns(self):
         body = self.generate_signature(config.SIG_KEY_VERSION)
-        url = ("qp/get_cooldowns/?{}").format(body)
+        url = f"qp/get_cooldowns/?{body}"
         return self.send_request(url)
 
     def log_resurrect_attribution(self):
@@ -1886,9 +1841,7 @@ class API(object):
         )
 
     def topical_explore(self):
-        url = (
-            "discover/topical_explore/?is_prefetch=true&omit_cover_media=true&use_sectional_payload=true&timezone_offset=0&session_id={}&include_fixed_destinations=true"
-        ).format(self.client_session_id)
+        url = f"discover/topical_explore/?is_prefetch=true&omit_cover_media=true&use_sectional_payload=true&timezone_offset=0&session_id={self.client_session_id}&include_fixed_destinations=true"
         return self.send_request(url)
 
     def notification_badge(self):
@@ -1934,9 +1887,7 @@ class API(object):
         )
         if cursor_id is not None:
             data["cursor"] = cursor_id
-        return self.send_request(
-            "direct_v2/threads/{}/".format(thread_id), json.dumps(data)
-        )
+        return self.send_request(f"direct_v2/threads/{thread_id}/", json.dumps(data))
 
     def get_ranked_recipients(self, mode, show_threads, query=None):
         data = {
@@ -1966,9 +1917,9 @@ class API(object):
         data["recipient_users"] = recipients.get("users")
         if recipients.get("thread"):
             data["thread_ids"] = recipients.get("thread")
-        data.update(self.default_data)
+        data |= self.default_data
 
-        url = "direct_v2/threads/broadcast/{}/".format(item_type)
+        url = f"direct_v2/threads/broadcast/{item_type}/"
         text = options.get("text", "")
         if item_type == "link":
             data["link_text"] = text
@@ -1993,7 +1944,7 @@ class API(object):
                 photo = f.read()
 
             data["photo"] = (
-                "direct_temp_photo_%s.jpg" % upload_id,
+                f"direct_temp_photo_{upload_id}.jpg",
                 photo,
                 "application/octet-stream",
                 {"Content-Transfer-Encoding": "binary"},
@@ -2001,7 +1952,7 @@ class API(object):
 
             m = MultipartEncoder(data, boundary=self.uuid)
             data = m.to_string()
-            headers.update({"Content-type": m.content_type})
+            headers["Content-type"] = m.content_type
 
         return self.send_request(url, data, with_signature=False, headers=headers)
 
@@ -2014,19 +1965,19 @@ class API(object):
     # ACCEPT button in pending request
     def approve_pending_thread(self, thread_id):
         data = self.json_data({"_uuid": self.uuid, "_csrftoken": self.token})
-        url = "direct_v2/threads/{}/approve/".format(thread_id)
+        url = f"direct_v2/threads/{thread_id}/approve/"
         return self.send_request(url, post=data)
 
     # DELETE button in pending request
     def hide_pending_thread(self, thread_id):
         data = self.json_data({"_uuid": self.uuid, "_csrftoken": self.token})
-        url = "direct_v2/threads/{}/hide/".format(thread_id)
+        url = f"direct_v2/threads/{thread_id}/hide/"
         return self.send_request(url, post=data)
 
     # BLOCK button in pending request
     def decline_pending_thread(self, thread_id):
         data = self.json_data({"_uuid": self.uuid, "_csrftoken": self.token})
-        url = "direct_v2/threads/{}/decline/".format(thread_id)
+        url = f"direct_v2/threads/{thread_id}/decline/"
         return self.send_request(url, post=data)
 
     def open_instagram_link(self, link):

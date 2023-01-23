@@ -56,14 +56,7 @@ def like(
             self.logger.error("`Like` action has been BLOCKED...!!!")
             # if no sleep enabled, default flow,
             # with message of activating blocked actions protection
-            if not self.blocked_actions_sleep:
-                if self.blocked_actions_protection:
-                    self.logger.warning(
-                        "Activating blocked actions \
-                         protection for `Like` action."
-                    )
-                    self.blocked_actions["likes"] = True
-            else:
+            if self.blocked_actions_sleep:
                 # if the action is sleeping and another block,
                 # then enable blocked actions protection
                 if self.sleeping_actions["likes"] and self.blocked_actions_protection:
@@ -87,9 +80,15 @@ def like(
                     )
                     self.sleeping_actions["likes"] = True
                     time.sleep(self.blocked_actions_sleep_delay)
+            elif self.blocked_actions_protection:
+                self.logger.warning(
+                    "Activating blocked actions \
+                         protection for `Like` action."
+                )
+                self.blocked_actions["likes"] = True
             return False
         if _r:
-            self.logger.info("Liked media %s." % media_id)
+            self.logger.info(f"Liked media {media_id}.")
             self.total["likes"] += 1
             # if action just slept and now successful, then no longer sleeping
             if self.blocked_actions_sleep and self.sleeping_actions["likes"]:
@@ -112,10 +111,7 @@ def like_comment(self, comment_id):
                     "%Y-%m-%d %H:%M:%S"
                 )
                 self.logger.warning(
-                    (
-                        "blocked_actions_protection ACTIVE. Skipping `like` "
-                        "action till, at least, {}."
-                    ).format(next_reset)
+                    f"blocked_actions_protection ACTIVE. Skipping `like` action till, at least, {next_reset}."
                 )
                 return False
         self.delay("like")
@@ -125,7 +121,7 @@ def like_comment(self, comment_id):
             self.blocked_actions["likes"] = True
             return False
         if _r:
-            self.logger.info("Liked comment {}.".format(comment_id))
+            self.logger.info(f"Liked comment {comment_id}.")
             self.total["likes"] += 1
             return True
     else:
@@ -136,7 +132,7 @@ def like_comment(self, comment_id):
 def like_media_comments(self, media_id):
     broken_items = []
     media_comments = self.get_media_comments(media_id)
-    self.logger.info("Found {} comments".format(len(media_comments)))
+    self.logger.info(f"Found {len(media_comments)} comments")
     comment_ids = [
         item["pk"]
         for item in media_comments
@@ -182,8 +178,7 @@ def like_medias(
         self.logger.info("Nothing to like.")
         return broken_items
     self.logger.info("Going to like %d medias." % (len(medias)))
-    feed_position = 0
-    for media in tqdm(medias):
+    for feed_position, media in enumerate(tqdm(medias)):
         if not self.like(
             media,
             check_media=check_media,
@@ -198,7 +193,6 @@ def like_medias(
         ):
             self.error_delay()
             broken_items.append(media)
-        feed_position += 1
     self.logger.info("DONE: Total liked %d medias." % self.total["likes"])
     return broken_items
 
@@ -211,10 +205,9 @@ def like_timeline(self, amount=None):
 
 def like_user(self, user_id, amount=None, filtration=True):
     """ Likes last user_id's medias """
-    if filtration:
-        if not self.check_user(user_id):
-            return False
-    self.logger.info("Liking user_%s's feed:" % user_id)
+    if filtration and not self.check_user(user_id):
+        return False
+    self.logger.info(f"Liking user_{user_id}'s feed:")
     user_id = self.convert_to_user_id(user_id)
     medias = self.get_user_medias(user_id, filtration=filtration)
     if not medias:
@@ -235,7 +228,7 @@ def like_users(self, user_ids, nlikes=None, filtration=True):
 
 def like_hashtag(self, hashtag, amount=None):
     """ Likes last medias from hashtag """
-    self.logger.info("Going to like media with hashtag #%s." % hashtag)
+    self.logger.info(f"Going to like media with hashtag #{hashtag}.")
     medias = self.get_total_hashtag_medias(hashtag, amount)
     if self.api.search_tags(hashtag):
         for tag in self.api.last_json["results"]:
@@ -243,15 +236,11 @@ def like_hashtag(self, hashtag, amount=None):
                 hashtag_id = tag["id"]
                 break
         else:
-            self.logger.error(
-                "Hashtag ID of {} not found within api response".format(hashtag)
-            )
-            self.logger.debug(
-                "Last JSON results: {}".format(self.api.last_json["results"])
-            )
+            self.logger.error(f"Hashtag ID of {hashtag} not found within api response")
+            self.logger.debug(f'Last JSON results: {self.api.last_json["results"]}')
             return False
     else:
-        self.logger.error("NO INFO FOR HASHTAG: {}".format(hashtag))
+        self.logger.error(f"NO INFO FOR HASHTAG: {hashtag}")
         return False
     return self.like_medias(
         medias,
@@ -267,40 +256,38 @@ def like_geotag(self, geotag, amount=None):
 
 
 def like_followers(self, user_id, nlikes=None, nfollows=None):
-    self.logger.info("Like followers of: %s." % user_id)
+    self.logger.info(f"Like followers of: {user_id}.")
     if self.reached_limit("likes"):
         self.logger.info("Out of likes for today.")
         return
     if not user_id:
         self.logger.info("User not found.")
         return
-    follower_ids = self.get_user_followers(user_id, nfollows)
-    if not follower_ids:
-        self.logger.info("%s not found / closed / has no followers." % user_id)
-    else:
+    if follower_ids := self.get_user_followers(user_id, nfollows):
         self.like_users(follower_ids[:nfollows], nlikes)
+    else:
+        self.logger.info(f"{user_id} not found / closed / has no followers.")
 
 
 def like_following(self, user_id, nlikes=None, nfollows=None):
-    self.logger.info("Like following of: %s." % user_id)
+    self.logger.info(f"Like following of: {user_id}.")
     if self.reached_limit("likes"):
         self.logger.info("Out of likes for today.")
         return
     if not user_id:
         self.logger.info("User not found.")
         return
-    following_ids = self.get_user_following(user_id, nfollows)
-    if not following_ids:
-        self.logger.info("%s not found / closed / has no following." % user_id)
-    else:
+    if following_ids := self.get_user_following(user_id, nfollows):
         self.like_users(following_ids, nlikes)
+    else:
+        self.logger.info(f"{user_id} not found / closed / has no following.")
 
 
 def like_location_feed(self, place, amount):
-    self.logger.info("Searching location: {}".format(place))
+    self.logger.info(f"Searching location: {place}")
     self.api.search_location(place)
     if not self.api.last_json["items"]:
-        self.logger.error("{} not found.".format(place))
+        self.logger.error(f"{place} not found.")
         return False
     else:
         finded_location = self.api.last_json["items"][0]["location"]["pk"]
@@ -309,7 +296,7 @@ def like_location_feed(self, place, amount):
         if location_feed.get("story"):
             self.logger.info("Liking users from stories...")
             location_to_filter = location_feed["story"]["items"][:amount]
-            for i in range(0, len(location_to_filter)):
+            for i in range(len(location_to_filter)):
                 user = location_to_filter[i]["user"]["pk"]
                 self.like_user(user_id=user, amount=1, filtration=False)
         elif location_feed.get("items"):
@@ -329,9 +316,6 @@ def like_location_feed(self, place, amount):
                 location_feed = self.api.last_json
         else:
             self.logger.error(
-                (
-                    " '{}' does not seem to have pictures. "
-                    "Select a different location."
-                ).format(place)
+                f" '{place}' does not seem to have pictures. Select a different location."
             )
             return False

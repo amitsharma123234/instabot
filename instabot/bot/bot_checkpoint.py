@@ -20,12 +20,8 @@ class Checkpoint(object):
     """
 
     def __init__(self, bot):
-        self.total = {}
-        for k in bot.total:
-            self.total[k] = bot.total[k]
-        self.blocked_actions = {}
-        for k in bot.blocked_actions:
-            self.blocked_actions[k] = bot.blocked_actions[k]
+        self.total = {k: bot.total[k] for k in bot.total}
+        self.blocked_actions = {k: bot.blocked_actions[k] for k in bot.blocked_actions}
         self.start_time = bot.start_time
         self.date = datetime.now()
         self.total_requests = bot.api.total_requests
@@ -45,7 +41,7 @@ def save_checkpoint(self):
     checkpoint = Checkpoint(self)
     fname = CHECKPOINT_PATH.format(fname=self.api.username)
     fname = os.path.join(self.base_path, fname)
-    self.logger.debug("Saving Checkpoint file to: {}".format(fname))
+    self.logger.debug(f"Saving Checkpoint file to: {fname}")
     with open(fname, "wb") as f:
         pickle.dump(checkpoint, f, -1)
     return True
@@ -55,7 +51,7 @@ def load_checkpoint(self):
     try:
         fname = CHECKPOINT_PATH.format(fname=self.api.username)
         fname = os.path.join(self.base_path, fname)
-        self.logger.debug("Loading Checkpoint file from: {}".format(fname))
+        self.logger.debug(f"Loading Checkpoint file from: {fname}")
         with open(fname, "rb") as f:
             checkpoint = pickle.load(f)
         if isinstance(checkpoint, Checkpoint):

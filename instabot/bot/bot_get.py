@@ -11,19 +11,17 @@ from tqdm import tqdm
 def get_user_stories(self, user_id):
     self.api.get_user_stories(user_id)
     try:
-        if int(self.api.last_json["reel"]["media_count"]) > 0:
-            list_image = []
-            list_video = []
-            for item in self.api.last_json["reel"]["items"]:
-                if int(item["media_type"]) == 1:  # photo
-                    img = item["image_versions2"]["candidates"][0]["url"]
-                    list_image.append(img)
-                elif int(item["media_type"]) == 2:  # video
-                    video = item["video_versions"][0]["url"]
-                    list_video.append(video)
-            return list_image, list_video
-        else:
+        if int(self.api.last_json["reel"]["media_count"]) <= 0:
             return [], []
+        list_image = []
+        list_video = []
+        for item in self.api.last_json["reel"]["items"]:
+            if int(item["media_type"]) == 1:  # photo
+                list_image.append(item["image_versions2"]["candidates"][0]["url"])
+            elif int(item["media_type"]) == 2:  # video
+                video = item["video_versions"][0]["url"]
+                list_video.append(video)
+        return list_image, list_video
     except Exception as e:
         self.logger.error(str(e))
         return [], []
@@ -118,11 +116,9 @@ def get_user_likers(self, user_id, media_count=10):
     your_likers = set()
     media_items = self.get_user_medias(user_id, filtration=False)
     if not media_items:
-        self.logger.warning("Can't get %s medias." % user_id)
+        self.logger.warning(f"Can't get {user_id} medias.")
         return []
-    for media_id in tqdm(
-        media_items[:media_count], desc="Getting %s media likers" % user_id
-    ):
+    for media_id in tqdm(media_items[:media_count], desc=f"Getting {user_id} media likers"):
         media_likers = self.get_media_likers(media_id)
         your_likers |= set(media_likers)
     return list(your_likers)
@@ -155,9 +151,10 @@ def get_locations_from_coordinates(self, latitude, longitude):
         location_lat = location["location"]["lat"]
         location_lng = location["location"]["lng"]
 
-        if int(location_lat) == int(latitude):
-            if int(location_lng) == int(longitude):
-                filtered_locations.append(location)
+        if int(location_lat) == int(latitude) and int(location_lng) == int(
+            longitude
+        ):
+            filtered_locations.append(location)
 
     return filtered_locations
 
@@ -167,7 +164,7 @@ def get_media_info(self, media_id):
         return media_id
     self.api.media_info(media_id)
     if "items" not in self.api.last_json:
-        self.logger.info("Media with %s not found." % media_id)
+        self.logger.info(f"Media with {media_id} not found.")
         return []
     return self.api.last_json.get("items")
 
@@ -247,7 +244,7 @@ def get_user_following(self, user_id, nfollows=None):
 def get_comment_likers(self, comment_id):
     self.api.get_comment_likers(comment_id)
     if "users" not in self.api.last_json:
-        self.logger.info("Comment with %s not found." % comment_id)
+        self.logger.info(f"Comment with {comment_id} not found.")
         return []
     return list(map(lambda user: str(user["pk"]), self.api.last_json["users"]))
 
@@ -255,7 +252,7 @@ def get_comment_likers(self, comment_id):
 def get_media_likers(self, media_id):
     self.api.get_media_likers(media_id)
     if "users" not in self.api.last_json:
-        self.logger.info("Media with %s not found." % media_id)
+        self.logger.info(f"Media with {media_id} not found.")
         return []
     return list(map(lambda user: str(user["pk"]), self.api.last_json["users"]))
 
@@ -282,7 +279,7 @@ def get_media_comments_all(self, media_id, only_text=False, count=False):
         if count and len(comments) >= count:
             comments = comments[:count]
             has_more_comments = False
-            self.logger.info("Getting comments stopped by count (%s)." % count)
+            self.logger.info(f"Getting comments stopped by count ({count}).")
         if has_more_comments:
             max_id = self.api.last_json["next_max_id"]
 
@@ -306,7 +303,7 @@ def get_media_commenters(self, media_id):
 def search_users(self, query):
     self.api.search_users(query)
     if "users" not in self.api.last_json:
-        self.logger.info("Users with %s not found." % query)
+        self.logger.info(f"Users with {query} not found.")
         return []
     return [str(user["pk"]) for user in self.api.last_json["users"]]
 
@@ -473,15 +470,14 @@ def get_link_from_media_id(self, media_id):
     while media_id:
         media_id, char = int(media_id) // 64, int(media_id) % 64
         result += list(alphabet.keys())[list(alphabet.values()).index(char)]
-    return "https://instagram.com/p/" + result[::-1] + "/"
+    return f"https://instagram.com/p/{result[::-1]}/"
 
 
 def get_messages(self):
     if self.api.get_inbox_v2():
         return self.api.last_json
-    else:
-        self.logger.info("Messages were not found, " "something went wrong.")
-        return None
+    self.logger.info("Messages were not found, " "something went wrong.")
+    return None
 
 
 def convert_to_user_id(self, x):
@@ -497,9 +493,8 @@ def get_pending_follow_requests(self):
     self.api.get_pending_friendships()
     if self.api.last_json.get("users"):
         return self.api.last_json.get("users")
-    else:
-        self.logger.info("There isn't any pending request.")
-        return []
+    self.logger.info("There isn't any pending request.")
+    return []
 
 
 def get_pending_thread_requests(self):
@@ -517,8 +512,5 @@ def get_muted_friends(self, muted_content):
     self.api.get_muted_friends(muted_content)
     if self.api.last_json.get("users"):
         return [str(user.get("pk")) for user in self.api.last_json.get("users")]
-    else:
-        self.logger.info(
-            "No users with muted {} " "in your friends".format(muted_content)
-        )
-        return []
+    self.logger.info(f"No users with muted {muted_content} in your friends")
+    return []

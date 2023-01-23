@@ -8,14 +8,14 @@ DEFAULT_SECRET_DIR = os.path.abspath(os.getcwd())
 
 
 def get_credential_file(base_path=DEFAULT_SECRET_DIR):
-    return base_path + "/config/secret.txt"
+    return f"{base_path}/config/secret.txt"
 
 
 def add_credentials(base_path):
     SECRET_FILE = get_credential_file(base_path)
     with open(SECRET_FILE, "a") as f:
         print("Enter your login: ")
-        f.write(str(sys.stdin.readline().strip()) + ":")
+        f.write(f"{str(sys.stdin.readline().strip())}:")
         print(
             "Enter your password: (it will not be shown due to security "
             + "reasons - just start typing and press Enter)"
@@ -66,16 +66,14 @@ def check_secret(base_path):
             with open(SECRET_FILE, "r") as f:
                 try:
                     login, password = f.readline().strip().split(":")
-                    if len(login) < 4 or len(password) < 6:
-
-                        print(
-                            "Data in `secret.txt` file is invalid. "
-                            "We will delete it and try again."
-                        )
-
-                        os.remove(SECRET_FILE)
-                    else:
+                    if len(login) >= 4 and len(password) >= 6:
                         return True
+                    print(
+                        "Data in `secret.txt` file is invalid. "
+                        "We will delete it and try again."
+                    )
+
+                    os.remove(SECRET_FILE)
                 except Exception:
                     print("Your file is broken. We will delete it " + "and try again.")
                     os.remove(SECRET_FILE)

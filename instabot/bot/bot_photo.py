@@ -32,9 +32,9 @@ def upload_photo(
         photo, caption, upload_id, from_video, options=options, user_tags=user_tags, is_sidecar=is_sidecar
     )
     if not result:
-        self.logger.info("Photo '{}' is not uploaded.".format(photo))
+        self.logger.info(f"Photo '{photo}' is not uploaded.")
         return False
-    self.logger.info("Photo '{}' is uploaded.".format(photo))
+    self.logger.info(f"Photo '{photo}' is uploaded.")
     return result
 
 
@@ -80,14 +80,14 @@ def download_photo(
         media = self.get_media_info(media_id)[0]
         caption = media["caption"]["text"] if media["caption"] else ""
         username = media["user"]["username"]
-        fname = os.path.join(folder, "{}_{}.txt".format(username, media_id))
+        fname = os.path.join(folder, f"{username}_{media_id}.txt")
         with open(fname, encoding="utf8", mode="w") as f:
             f.write(caption)
 
     try:
         return self.api.download_photo(media_id, filename, False, folder)
     except Exception:
-        self.logger.info("Media with `{}` is not downloaded.".format(media_id))
+        self.logger.info(f"Media with `{media_id}` is not downloaded.")
         return False
 
 
@@ -98,7 +98,7 @@ def download_photos(self, medias, folder, save_description=False):
         self.logger.info("Nothing to downloads.")
         return broken_items
 
-    self.logger.info("Going to download {} medias.".format(len(medias)))
+    self.logger.info(f"Going to download {len(medias)} medias.")
 
     for media in tqdm(medias):
         if not self.download_photo(media, folder, save_description=save_description):

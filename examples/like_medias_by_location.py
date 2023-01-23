@@ -66,16 +66,12 @@ bot.login(username=args.u, password=args.p, proxy=args.proxy)
 
 if args.locations:
     for location in args.locations:
-        print(u"Location: {}".format(location))
+        print(f"Location: {location}")
         bot.api.search_location(location)
-        finded_location = bot.api.last_json["items"][0]
-        if finded_location:
-            print(u"Found {}".format(finded_location["title"]))
+        if finded_location := bot.api.last_json["items"][0]:
+            print(f'Found {finded_location["title"]}')
 
-            if not args.amount:
-                nlikes = input(u"How much likes per location?\n")
-            else:
-                nlikes = args.amount
+            nlikes = args.amount or input(u"How much likes per location?\n")
             like_location_feed(bot, finded_location, amount=int(nlikes))
 else:
     location_name = input(u"Write location name:\n").strip()
@@ -83,14 +79,11 @@ else:
     if not bot.api.last_json["items"]:
         print(u"Location was not found")
         exit(1)
-    if not args.amount:
-        nlikes = input(u"How much likes per location?\n")
-    else:
-        nlikes = args.amount
+    nlikes = args.amount or input(u"How much likes per location?\n")
     ans = True
     while ans:
         for n, location in enumerate(bot.api.last_json["items"], start=1):
-            print(u"{}. {}".format(n, location["title"]))
+            print(f'{n}. {location["title"]}')
         print(u"\n0. Exit\n")
         ans = int(input(u"What place would you want to choose?\n").strip())
         if ans == 0:

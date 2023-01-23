@@ -232,9 +232,7 @@ class TestBotFilter(TestBot):
 
         for i, _ in enumerate(range(results_3)):
             my_test_follower_items[i]["pk"] = TEST_FOLLOWER_ITEM["pk"] + i
-            my_test_follower_items[i]["username"] = "{}_{}".format(
-                TEST_FOLLOWER_ITEM["username"], i
-            )
+            my_test_follower_items[i]["username"] = f'{TEST_FOLLOWER_ITEM["username"]}_{i}'
         response_data_3 = {
             "status": "ok",
             "big_list": False,
@@ -254,9 +252,9 @@ class TestBotFilter(TestBot):
         )
 
         for i, _ in enumerate(range(results_3)):
-            my_test_search_username_items[i]["username"] = "{}_{}".format(
-                TEST_FOLLOWER_ITEM["username"], i
-            )
+            my_test_search_username_items[i][
+                "username"
+            ] = f'{TEST_FOLLOWER_ITEM["username"]}_{i}'
             my_test_search_username_items[i]["pk"] = TEST_FOLLOWER_ITEM["pk"] + i
             my_test_search_username_items[i]["is_verified"] = False
             my_test_search_username_items[i]["is_business"] = False
@@ -268,9 +266,9 @@ class TestBotFilter(TestBot):
             )
             my_test_search_username_items[i]["has_anonymous_profile_picture"] = False
 
-            my_test_username_info_items[i]["username"] = "{}_{}".format(
-                TEST_FOLLOWER_ITEM["username"], i
-            )
+            my_test_username_info_items[i][
+                "username"
+            ] = f'{TEST_FOLLOWER_ITEM["username"]}_{i}'
             my_test_username_info_items[i]["pk"] = TEST_FOLLOWER_ITEM["pk"] + i
             my_test_username_info_items[i]["is_verified"] = False
             my_test_username_info_items[i]["is_business"] = False
@@ -368,9 +366,9 @@ class TestBotFilter(TestBot):
 
         for i, _ in enumerate(range(results_3)):
             my_test_following_items[i]["pk"] = TEST_FOLLOWING_ITEM["pk"] + i
-            my_test_following_items[i]["username"] = "{}_{}".format(
-                TEST_FOLLOWING_ITEM["username"], i
-            )
+            my_test_following_items[i][
+                "username"
+            ] = f'{TEST_FOLLOWING_ITEM["username"]}_{i}'
         response_data_3 = {
             "status": "ok",
             "big_list": False,
@@ -395,9 +393,9 @@ class TestBotFilter(TestBot):
         )
 
         for i, _ in enumerate(range(results_3)):
-            my_test_search_username_items[i]["username"] = "{}_{}".format(
-                TEST_FOLLOWING_ITEM["username"], i
-            )
+            my_test_search_username_items[i][
+                "username"
+            ] = f'{TEST_FOLLOWING_ITEM["username"]}_{i}'
             my_test_search_username_items[i]["pk"] = TEST_FOLLOWING_ITEM["pk"] + i
             my_test_search_username_items[i]["is_verified"] = False
             my_test_search_username_items[i]["is_business"] = False
@@ -409,9 +407,9 @@ class TestBotFilter(TestBot):
             )
             my_test_search_username_items[i]["has_anonymous_profile_picture"] = False
 
-            my_test_username_info_items[i]["username"] = "{}_{}".format(
-                TEST_FOLLOWING_ITEM["username"], i
-            )
+            my_test_username_info_items[i][
+                "username"
+            ] = f'{TEST_FOLLOWING_ITEM["username"]}_{i}'
             my_test_username_info_items[i]["pk"] = TEST_FOLLOWING_ITEM["pk"] + i
             my_test_username_info_items[i]["is_verified"] = False
             my_test_username_info_items[i]["is_business"] = False

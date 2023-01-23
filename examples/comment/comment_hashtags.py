@@ -9,6 +9,7 @@
         You can change file and add there your comments.
 """
 
+
 import os
 import sys
 
@@ -17,13 +18,13 @@ from instabot import Bot  # noqa: E402
 
 if len(sys.argv) < 3:
     print("USAGE: Pass a path to the file with comments " "and a hashtag to comment")
-    print("Example: %s comments_emoji.txt dog cat" % sys.argv[0])
+    print(f"Example: {sys.argv[0]} comments_emoji.txt dog cat")
     exit()
 
 comments_file_name = sys.argv[1]
 hashtags = sys.argv[2:]
 if not os.path.exists(comments_file_name):
-    print("Can't find '%s' file." % comments_file_name)
+    print(f"Can't find '{comments_file_name}' file.")
     exit()
 
 bot = Bot(comments_file=comments_file_name)

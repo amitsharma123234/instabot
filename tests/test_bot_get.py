@@ -81,15 +81,7 @@ class TestBotGet(TestBot):
             },
             status=200,
         )
-        # responses.add(
-        #     responses.POST, "{api_url}media/{media_id}/info/".format(
-        #     api_url=API_URL, media_id=media_id),
-        #     json={"status": "ok"}, status=200)
-
-        expected_result = {}
-        for key in TEST_PHOTO_ITEM:
-            expected_result[key] = TEST_PHOTO_ITEM[key]
-
+        expected_result = {key: TEST_PHOTO_ITEM[key] for key in TEST_PHOTO_ITEM}
         result = self.bot.get_media_info(media_id)
 
         assert result[0] == expected_result
@@ -229,12 +221,9 @@ class TestBotGet(TestBot):
         results = 4
         my_test_photo_item = TEST_PHOTO_ITEM.copy()
         my_test_photo_item["user"]["pk"] = user_id
-        my_test_photo_items = []
-        for _ in range(results):
-            my_test_photo_items.append(my_test_photo_item.copy())
-        expect_filtered = 0
+        my_test_photo_items = [my_test_photo_item.copy() for _ in range(results)]
         my_test_photo_items[1]["has_liked"] = True
-        expect_filtered += 1
+        expect_filtered = 0 + 1
         my_test_photo_items[2]["like_count"] = self.bot.max_likes_to_like + 1
         expect_filtered += 1
         my_test_photo_items[3]["like_count"] = self.bot.max_likes_to_like - 1
@@ -520,10 +509,9 @@ class TestBotGet(TestBot):
     @pytest.mark.parametrize("user_id", [1234, "1234"])
     def test_get_username_info(self, user_id):
         response_data = {"status": "ok", "user": TEST_USERNAME_INFO_ITEM}
-        expected_result = {}
-        for key in TEST_USERNAME_INFO_ITEM:
-            expected_result[key] = TEST_USERNAME_INFO_ITEM[key]
-
+        expected_result = {
+            key: TEST_USERNAME_INFO_ITEM[key] for key in TEST_USERNAME_INFO_ITEM
+        }
         responses.add(
             responses.GET,
             "{api_url}users/{user_id}/info/".format(api_url=API_URL, user_id=user_id),
@@ -669,12 +657,9 @@ class TestBotGet(TestBot):
         results = 5
         my_test_photo_item = TEST_PHOTO_ITEM.copy()
         my_test_photo_item["like_count"] = self.bot.min_likes_to_like + 1
-        my_test_photo_items = []
-        for _ in range(results):
-            my_test_photo_items.append(my_test_photo_item.copy())
-        expect_filtered = 0
+        my_test_photo_items = [my_test_photo_item.copy() for _ in range(results)]
         my_test_photo_items[1]["has_liked"] = True
-        expect_filtered += 1
+        expect_filtered = 0 + 1
         my_test_photo_items[2]["like_count"] = self.bot.max_likes_to_like + 1
         expect_filtered += 1
         my_test_photo_items[3]["like_count"] = self.bot.min_likes_to_like - 1
@@ -728,12 +713,9 @@ class TestBotGet(TestBot):
         results = 10
         my_test_photo_item = TEST_PHOTO_ITEM.copy()
         my_test_photo_item["like_count"] = self.bot.min_likes_to_like + 1
-        my_test_photo_items = []
-        for _ in range(results):
-            my_test_photo_items.append(my_test_photo_item.copy())
-        expect_filtered = 0
+        my_test_photo_items = [my_test_photo_item.copy() for _ in range(results)]
         my_test_photo_items[1]["has_liked"] = True
-        expect_filtered += 1
+        expect_filtered = 0 + 1
         my_test_photo_items[2]["like_count"] = self.bot.max_likes_to_like + 1
         expect_filtered += 1
         my_test_photo_items[3]["like_count"] = self.bot.min_likes_to_like - 1
@@ -1027,12 +1009,9 @@ class TestBotGet(TestBot):
         results = 5
         my_test_photo_item = TEST_PHOTO_ITEM.copy()
         my_test_photo_item["like_count"] = self.bot.min_likes_to_like + 1
-        my_test_photo_items = []
-        for _ in range(results):
-            my_test_photo_items.append(my_test_photo_item.copy())
-        expect_filtered = 0
+        my_test_photo_items = [my_test_photo_item.copy() for _ in range(results)]
         my_test_photo_items[1]["has_liked"] = True
-        expect_filtered += 1
+        expect_filtered = 0 + 1
         my_test_photo_items[2]["like_count"] = self.bot.max_likes_to_like + 1
         expect_filtered += 1
         my_test_photo_items[3]["like_count"] = self.bot.min_likes_to_like - 1

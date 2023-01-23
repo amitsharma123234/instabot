@@ -23,11 +23,11 @@ def download_photo(self, media_id, filename, media=False, folder="photos"):
         return True
     elif media["media_type"] == 1:
         filename = (
-            "{username}_{media_id}.jpg".format(
+            "{fname}.jpg".format(fname=filename)
+            if filename
+            else "{username}_{media_id}.jpg".format(
                 username=media["user"]["username"], media_id=media_id
             )
-            if not filename
-            else "{fname}.jpg".format(fname=filename)
         )
         images = media["image_versions2"]["candidates"]
         fname = os.path.join(folder, filename)
@@ -48,11 +48,13 @@ def download_photo(self, media_id, filename, media=False, folder="photos"):
                 video_included = True
                 continue
             filename_i = (
-                "{username}_{media_id}_{i}.jpg".format(
-                    username=media["user"]["username"], media_id=media_id, i=index
+                "{fname}_{i}.jpg".format(fname=filename, i=index)
+                if filename
+                else "{username}_{media_id}_{i}.jpg".format(
+                    username=media["user"]["username"],
+                    media_id=media_id,
+                    i=index,
                 )
-                if not filename
-                else "{fname}_{i}.jpg".format(fname=filename, i=index)
             )
             images = media["carousel_media"][index]["image_versions2"]["candidates"]
             fname = os.path.join(folder, filename_i)
@@ -193,7 +195,7 @@ def upload_photo(
 
     if response.status_code != 200:
         self.logger.error(
-            "Photo Upload failed with the following response: {}".format(response)
+            f"Photo Upload failed with the following response: {response}"
         )
         return False
     # update the upload id
@@ -203,7 +205,7 @@ def upload_photo(
         return True
     # CONFIGURE
     configure_timeout = options.get("configure_timeout")
-    for attempt in range(4):
+    for _ in range(4):
         if configure_timeout:
             time.sleep(configure_timeout)
         if is_sidecar:
@@ -312,7 +314,6 @@ def resize_image(fname):
         )
         return False
     print("Analizing `{fname}`".format(fname=fname))
-    h_lim = {"w": 90.0, "h": 47.0}
     v_lim = {"w": 4.0, "h": 5.0}
     img = Image.open(fname)
     (w, h) = img.size
@@ -325,9 +326,9 @@ def resize_image(fname):
         o = exif[orientation]
         if o == 3:
             deg = 180
-        if o == 6:
+        elif o == 6:
             deg = 270
-        if o == 8:
+        elif o == 8:
             deg = 90
         if deg != 0:
             print("Rotating by {d} degrees".format(d=deg))
@@ -335,12 +336,12 @@ def resize_image(fname):
             (w, h) = img.size
     except (AttributeError, KeyError, IndexError) as e:
         print("No exif info found (ERR: {err})".format(err=e))
-        pass
     img = img.convert("RGBA")
     ratio = w * 1.0 / h * 1.0
     print("FOUND w:{w}, h:{h}, ratio={r}".format(w=w, h=h, r=ratio))
     if w > h:
         print("Horizontal image")
+        h_lim = {"w": 90.0, "h": 47.0}
         if ratio > (h_lim["w"] / h_lim["h"]):
             print("Cropping image")
             cut = int(ceil((w - h * h_lim["w"] / h_lim["h"]) / 2))
@@ -408,8 +409,6 @@ def stories_shaper(fname):
         new_fname = "{fname}.STORIES.jpg".format(fname=fname)
         new = Image.new("RGB", (img.size[0], img.size[1]), (255, 255, 255))
         new.paste(img, (0, 0, img.size[0], img.size[1]))
-        new.save(new_fname)
-        return new_fname
     else:
         min_width = 1080
         min_height = 1920
@@ -417,14 +416,10 @@ def stories_shaper(fname):
             height_percent = min_height / float(img.size[1])
             width_size = int(float(img.size[0]) * float(height_percent))
             img = img.resize((width_size, min_height), Image.ANTIALIAS)
-        else:
-            pass
         if img.size[0] < 1080:
             width_percent = min_width / float(img.size[0])
             height_size = int(float(img.size[1]) * float(width_percent))
             img_bg = img.resize((min_width, height_size), Image.ANTIALIAS)
-        else:
-            pass
         img_bg = img.crop(
             (
                 int((img.size[0] - 1080) / 2),
@@ -459,5 +454,6 @@ def stories_shaper(fname):
         )
         new = Image.new("RGB", (img_bg.size[0], img_bg.size[1]), (255, 255, 255))
         new.paste(img_bg, (0, 0, img_bg.size[0], img_bg.size[1]))
-        new.save(new_fname)
-        return new_fname
+
+    new.save(new_fname)
+    return new_fname

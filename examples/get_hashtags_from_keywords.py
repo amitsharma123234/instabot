@@ -25,14 +25,12 @@ def dispositions(l):
 
     print("Generating dispositions...")
     res = []
-    res += [a for a in l]
+    res += list(l)
     length = len(l)
-    num = 2
-    while num <= length:
+    for num in range(2, length + 1):
         p = list(permutations(l, num))
         res += [" ".join(c) for c in p]
-        num += 1
-    print("Generated {} dispositions".format(len(res)))
+    print(f"Generated {len(res)} dispositions")
     return res
 
 
@@ -44,7 +42,7 @@ for i in tqdm(dispositions(sys.argv[1:])):
         tags[result["name"]] = result["media_count"]
 sorted_by_value = sorted(tags.items(), key=lambda kv: kv[1], reverse=True)
 
-bot.logger.info("Found {} hashtags".format(len(sorted_by_value)))
+bot.logger.info(f"Found {len(sorted_by_value)} hashtags")
 for tag in sorted_by_value:
     if tag[1] < 1000:
         color = "34"

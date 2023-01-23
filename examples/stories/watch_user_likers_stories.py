@@ -13,6 +13,7 @@
         You can change file and add there your comments.
 """
 
+
 import os
 import random
 import sys
@@ -49,14 +50,13 @@ while True:
     try:
         # GET USER FEED
         if not bot.api.get_user_feed(current_user_id):
-            print("Can't get feed of user_id=%s" % current_user_id)
+            print(f"Can't get feed of user_id={current_user_id}")
 
         # GET MEDIA LIKERS
         user_media = random.choice(bot.api.last_json["items"])
         if not bot.api.get_media_likers(media_id=user_media["pk"]):
             bot.logger.info(
-                "Can't get media likers of media_id='%s' by user_id='%s'"
-                % (user_media["id"], current_user_id)
+                f"""Can't get media likers of media_id='{user_media["id"]}' by user_id='{current_user_id}'"""
             )
 
         likers = bot.api.last_json["users"]
@@ -76,7 +76,7 @@ while True:
         if random.random() < 0.05:
             current_user_id = user_to_get_likers_of
             bot.logger.info(
-                "Sleeping and returning back to original user_id=%s" % current_user_id
+                f"Sleeping and returning back to original user_id={current_user_id}"
             )
             time.sleep(90 * random.random() + 60)
 

@@ -33,11 +33,9 @@ class TestBotSupport(TestBot):
         assert self.bot.extract_urls(url) == result
 
     def test_check_if_file_exist(self):
-        test_file = open("test", "w")
+        with open("test", "w") as test_file:
+            assert self.bot.check_if_file_exists("test")
 
-        assert self.bot.check_if_file_exists("test")
-
-        test_file.close()
         os.remove("test")
 
     def test_check_if_file_exist_fail(self):

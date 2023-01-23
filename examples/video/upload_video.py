@@ -40,43 +40,42 @@ if not args.video:
     videos = []
     exts = ["mp4", "MP4", "mov", "MOV"]
     for ext in exts:
-        videos += [os.path.basename(x) for x in glob.glob("media/*.{}".format(ext))]
+        videos += [os.path.basename(x) for x in glob.glob(f"media/*.{ext}")]
     from random import shuffle
 
     shuffle(videos)
 else:
     videos = [args.video]
 videos = list(set(videos) - set(posted_video_list))
-if len(videos) == 0:
+if not videos:
     if not args.video:
         bot.logger.warning("NO MORE VIDEO TO UPLOAD")
         exit()
     else:
-        bot.logger.error("The video `{}` has already been posted".format(videos[0]))
+        bot.logger.error(f"The video `{videos[0]}` has already been posted")
 try:
     for video in videos:
-        bot.logger.info("Checking {}".format(video))
+        bot.logger.info(f"Checking {video}")
         if args.caption:
             caption = args.caption
+        elif captions_for_medias.CAPTIONS.get(video):
+            caption = captions_for_medias.CAPTIONS[video]
         else:
-            if captions_for_medias.CAPTIONS.get(video):
-                caption = captions_for_medias.CAPTIONS[video]
-            else:
-                try:
-                    caption = raw_input(
-                        "No caption found for this media. " "Type the caption now: "
-                    )
-                except NameError:
-                    caption = input(
-                        "No caption found for this media. " "Type the caption now: "
-                    )
+            try:
+                caption = raw_input(
+                    "No caption found for this media. " "Type the caption now: "
+                )
+            except NameError:
+                caption = input(
+                    "No caption found for this media. " "Type the caption now: "
+                )
         bot.logger.info(
             "Uploading video `{video}` with caption: `{caption}`".format(
                 video=video, caption=caption
             )
         )
         if not bot.upload_video(
-            os.path.dirname(os.path.realpath(__file__)) + "/media/" + video,
+            f"{os.path.dirname(os.path.realpath(__file__))}/media/{video}",
             caption=caption,
         ):
             bot.logger.error("Something went wrong...")
@@ -84,7 +83,7 @@ try:
         posted_video_list.append(video)
         with open(posted_video_file, "a") as f:
             f.write(video + "\n")
-        bot.logger.info("Succesfully uploaded: " + video)
+        bot.logger.info(f"Succesfully uploaded: {video}")
         break
 except Exception as e:
     bot.logger.error("\033[41mERROR...\033[0m")

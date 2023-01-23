@@ -4,6 +4,7 @@
         Get total or filtered followers or followings to file.
 """
 
+
 import argparse
 import os
 import sys
@@ -60,7 +61,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if args.get != "followers" and args.get != "followings":
+if args.get not in ["followers", "followings"]:
     print(
         "Wrong option! You can get 'followers' or 'followings'.\n"
         "Type `python get_followers_or_followings_to_file.py "
@@ -74,7 +75,7 @@ bot.login(username=args.u, password=args.p, proxy=args.proxy)
 try:
     user_id = bot.get_user_id_from_username(args.user)
 except Exception as e:
-    bot.logger.error("{}".format(e))
+    bot.logger.error(f"{e}")
     exit()
 
 bot.api.get_total_followers_or_followings(

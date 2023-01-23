@@ -19,9 +19,9 @@ timeout = 24 * 60 * 60  # pics will be posted every 24 hours
 bot = Bot()
 bot.login()
 
+folder_path = "./pics"
 while True:
-    folder_path = "./pics"
-    pics = glob.glob(folder_path + "/*.jpg")
+    pics = glob.glob(f"{folder_path}/*.jpg")
     pics = sorted(pics)
     try:
         for pic in pics:
@@ -31,9 +31,9 @@ while True:
             pic_name = pic[:-4].split("-")
             pic_name = "-".join(pic_name[1:])
 
-            print("upload: " + pic_name)
+            print(f"upload: {pic_name}")
 
-            description_file = folder_path + "/" + pic_name + ".txt"
+            description_file = f"{folder_path}/{pic_name}.txt"
 
             if os.path.isfile(description_file):
                 with open(description_file, "r") as file:
@@ -55,5 +55,5 @@ while True:
             time.sleep(timeout)
 
     except Exception as e:
-        print(str(e))
+        print(e)
     time.sleep(60)

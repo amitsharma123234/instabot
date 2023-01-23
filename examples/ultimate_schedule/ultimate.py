@@ -34,7 +34,7 @@ random_hashtag_file = utils.file(config.HASHTAGS_FILE)
 photo_captions_file = utils.file(config.PHOTO_CAPTIONS_FILE)
 posted_pic_list = utils.file(config.POSTED_PICS_FILE).list
 
-pics = sorted([os.path.basename(x) for x in glob(config.PICS_PATH + "/*.jpg")])
+pics = sorted([os.path.basename(x) for x in glob(f"{config.PICS_PATH}/*.jpg")])
 
 
 def stats():
@@ -75,7 +75,7 @@ def follow_users_from_hashtag_file():
 
 def comment_hashtag():
     hashtag = random_hashtag_file.random()
-    bot.logger.info("Commenting on hashtag: " + hashtag)
+    bot.logger.info(f"Commenting on hashtag: {hashtag}")
     bot.comment_hashtag(hashtag)
 
 
@@ -87,7 +87,7 @@ def upload_pictures():  # Automatically post a pic in 'pics' folder
 
             caption = photo_captions_file.random()
             full_caption = caption + "\n" + config.FOLLOW_MESSAGE
-            bot.logger.info("Uploading pic with caption: " + caption)
+            bot.logger.info(f"Uploading pic with caption: {caption}")
             bot.upload_photo(config.PICS_PATH + pic, caption=full_caption)
             if bot.api.last_response.status_code != 200:
                 bot.logger.error("Something went wrong, read the following ->\n")
@@ -100,7 +100,7 @@ def upload_pictures():  # Automatically post a pic in 'pics' folder
                 posted_pic_list.append(pic)
                 with open("pics.txt", "a") as f:
                     f.write(pic + "\n")
-                bot.logger.info("Succesfully uploaded: " + pic)
+                bot.logger.info(f"Succesfully uploaded: {pic}")
                 bot.logger.info("Commenting uploaded photo with hashtags...")
                 medias = bot.get_your_medias()
                 last_photo = medias[0]  # Get the last photo posted

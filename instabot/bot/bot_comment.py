@@ -25,10 +25,7 @@ def comment(self, media_id, comment_text):
                     "%Y-%m-%d %H:%M:%S"
                 )
                 self.logger.warning(
-                    (
-                        "blocked_actions_protection ACTIVE. "
-                        "Skipping `comment` action till, at least, {}."
-                    ).format(next_reset)
+                    f"blocked_actions_protection ACTIVE. Skipping `comment` action till, at least, {next_reset}."
                 )
                 return False
         self.delay("comment")
@@ -78,9 +75,7 @@ def reply_to_comment(self, media_id, comment_text, parent_comment_id):
             self.logger.error("`Comment` action has been BLOCKED...!!!")
             return False
         if _r:
-            self.logger.info(
-                "Replied to comment {} of media {}".format(parent_comment_id, media_id)
-            )
+            self.logger.info(f"Replied to comment {parent_comment_id} of media {media_id}")
             self.total["comments"] += 1
             return True
     else:
@@ -96,7 +91,7 @@ def comment_medias(self, medias):
             continue
         if not self.is_commented(media):
             text = self.get_comment()
-            self.logger.info("Commented with text: %s" % text)
+            self.logger.info(f"Commented with text: {text}")
             if not self.comment(media, text):
                 self.delay("comment")
                 broken_items = medias[medias.index(media) :]
@@ -106,7 +101,7 @@ def comment_medias(self, medias):
 
 
 def comment_hashtag(self, hashtag, amount=None):
-    self.logger.info("Going to comment medias by %s hashtag" % hashtag)
+    self.logger.info(f"Going to comment medias by {hashtag} hashtag")
     medias = self.get_total_hashtag_medias(hashtag, amount)
     return self.comment_medias(medias)
 
@@ -115,7 +110,7 @@ def comment_user(self, user_id, amount=None):
     """ Comments last user_id's medias """
     if not self.check_user(user_id):
         return False
-    self.logger.info("Going to comment user_%s's feed:" % user_id)
+    self.logger.info(f"Going to comment user_{user_id}'s feed:")
     user_id = self.convert_to_user_id(user_id)
     medias = self.get_user_medias(user_id, is_comment=True)
     if not medias:

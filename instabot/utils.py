@@ -29,11 +29,11 @@ class file(object):
 
     def append(self, item, allow_duplicates=False):
         if self.verbose:
-            msg = "Adding '{}' to `{}`.".format(item, self.fname)
+            msg = f"Adding '{item}' to `{self.fname}`."
             print(bold(green(msg)))
 
         if not allow_duplicates and str(item) in self.list:
-            msg = "'{}' already in `{}`.".format(item, self.fname)
+            msg = f"'{item}' already in `{self.fname}`."
             print(bold(orange(msg)))
             return
 
@@ -45,7 +45,7 @@ class file(object):
         items = self.list
         if x in items:
             items.remove(x)
-            msg = "Removing '{}' from `{}`.".format(x, self.fname)
+            msg = f"Removing '{x}' from `{self.fname}`."
             print(bold(green(msg)))
             self.save_list(items)
 
